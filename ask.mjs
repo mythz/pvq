@@ -3,6 +3,9 @@
 import fs from "fs"
 
 let path = process.argv[2]
+let model = process.argv[3]
+let port = process.argv[4] ?? '11434'
+if (!model) throw "model required"
 
 if (!fs.existsSync(path)) {
     let id = parseInt(process.argv[2])
@@ -61,8 +64,8 @@ const max_tokens = -1
 let r = null
 let startTime = performance.now()
 try {
-    const content = obj.Title + "\n\n" + obj.Body //from 81991+
-    r = await fetch('http://localhost:11434/v1/chat/completions', {
+    const content = obj.Title + "\n\n" + obj.Body
+    r = await fetch(`http://localhost:${port}/v1/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -71,7 +74,7 @@ try {
                 { role:"user", content },
             ],
             temperature,
-            model: "codellama",
+            model,
             max_tokens,
             stream: false,
         })
@@ -84,7 +87,6 @@ let elapsed_ms = parseInt(endTime - startTime)
 
 logDebug(`=== RESPONSE ${id} in ${elapsed_ms}ms ===\n`)
 const res = await r.json()
-const model = lastLeftPart(lastRightPart(res.model,'/'),'.')
 const created = new Date(1710078197*1000).toISOString()
 res.request = {
     id,    
@@ -96,16 +98,16 @@ res.request = {
 }
 
 const content = res?.choices?.length > 0 && res.choices[0].message?.content
+const safeModel = model.replace(/:/g,'-')
 if (content) {
     logInfo(`id:${id}, created:${created}, model:${model}, temperature:${temperature}, elapsed_ms:${elapsed_ms}, choices:${res.choices.length}, size:${content.length}`)
     logDebug(content)
-    fs.writeFileSync(lastLeftPart(path,'.') + `.a.${model}.json`, JSON.stringify(res, undefined, 4), 'UTF-8')
+    fs.writeFileSync(lastLeftPart(path,'.') + `.a.${safeModel}.json`, JSON.stringify(res, undefined, 2), 'UTF-8')
 } else {
     logError(`ERROR ${id}: missing response`)
-    fs.writeFileSync(lastLeftPart(path,'.') + `.e.${model}.json`, JSON.stringify(res, undefined, 4), 'UTF-8')
+    fs.writeFileSync(lastLeftPart(path,'.') + `.e.${safeModel}.json`, JSON.stringify(res, undefined, 2), 'UTF-8')
 }
 logDebug(`\n=== END RESPONSE ${id} ===\n\n`)
-
 
 function lastLeftPart(s, needle) {
     if (s == null) return null
