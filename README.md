@@ -4,13 +4,13 @@ pvq website
 DB
  - gemma:2b
  - phi2
- - starcoder
+ - starcoder2:3b
 
 DR
  - mistral:7b
- - codellama
+ - codellama:13B
  - gemma:7b
- - starcoder-15b
+ - starcoder2:15b
  - mixtral
 
 Format:
