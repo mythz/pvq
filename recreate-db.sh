@@ -4,6 +4,13 @@ aws s3 sync s3://stackoverflow-shootout/sql/ ./data/ --endpoint-url https://b95f
 # Set the path to your SQLite database file
 DB_FILE="./data/filtered.db"
 
+# If DB_FILE exists, return an error
+if [ -f "$DB_FILE" ]; then
+    echo "Error: The database file $DB_FILE already exists."
+    echo "Please remove the existing database file before running this script."
+    exit 1
+fi
+
 echo "Starting database creation process..."
 
 # Create the SQLite database
