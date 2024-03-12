@@ -22,9 +22,20 @@ done
 
 echo "All *_posts.sql files executed successfully."
 
-# Run the cleanup.sql script
-echo "Running cleanup.sql..."
-sqlite3 "$DB_FILE" < ./data/cleanup.sql
-echo "Cleanup script executed successfully."
+# Run the fix.sql script
+echo "Running fix.sql..."
+sqlite3 "$DB_FILE" < ./data/fix.sql
+echo "Fix script executed successfully."
+
+# Check if --cleanup flag is provided
+if [ "$1" = "--cleanup" ]; then
+    echo "Cleanup flag detected. Running cleanup.sql..."
+    # Run the cleanup.sql script
+    echo "Running cleanup.sql..."
+    sqlite3 "$DB_FILE" < ./data/cleanup.sql
+    echo "Cleanup script executed successfully."
+else
+    echo "No cleanup flag detected. Use --cleanup to remove the original tables."
+fi
 
 echo "Database creation process completed."
