@@ -1,0 +1,8 @@
+{
+  "version": "1.0.0",
+  "main": "extract-questions.js",
+  "private": true,
+  "dependencies": {
+    "sqlite3": "^5.1.7"
+  }
+}

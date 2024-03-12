@@ -4,6 +4,9 @@
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
 questions/
+data/*.sql
+data/*.db
+.idea/
 
 # User-specific files
 *.rsuser
