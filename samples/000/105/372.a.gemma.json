@@ -1,0 +1,35 @@
+{
+  "id": "chatcmpl-951",
+  "object": "chat.completion",
+  "created": 1710145529,
+  "model": "gemma",
+  "system_fingerprint": "fp_ollama",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Sure, here's how to enumerate an `enum` in C#:\n\n```C#\npublic enum Suit\n{\n    Spades,\n    Hearts,\n    Clubs,\n    Diamonds\n}\n\npublic void EnumerateAllSuitsDemoMethod()\n{\n    foreach (Suit suit in Enum.GetValues(typeof(Suit)))\n    {\n        DoSomething(suit);\n    }\n}\n```\n\n**Explanation:**\n\n* The `Enum.GetValues(typeof(Suit))` method returns an array of all the values defined in the `Suit` enum.\n* The `foreach` loop iterates over the array of values returned by `Enum.GetValues`.\n* The `DoSomething(suit)` method is called for each value of the enum in the loop.\n\n**Additional notes:**\n\n* The `Enum.GetValues` method is static, so you do not need to create an instance of the enum.\n* The `typeof(Suit)` argument specifies the type of the enum that you are enumerating.\n* The returned array will contain all the values defined in the enum, in the order they are declared.\n* You can also use the `Enum.TryParse` method to convert a string value into an enum value."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 143,
+    "completion_tokens": 264,
+    "total_tokens": 407
+  },
+  "request": {
+    "id": 105372,
+    "created": "2024-03-10T13:43:17.000Z",
+    "messages": {
+      "system": {
+        "role": "system",
+        "content": "You are a friendly AI Assistant that helps answer developer questions"
+      }
+    },
+    "temperature": 0.7,
+    "max_tokens": -1,
+    "elapsed_ms": 5415
+  }
+}
