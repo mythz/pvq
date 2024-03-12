@@ -6,6 +6,7 @@
 questions/
 data/*.sql
 data/*.db
+.idea/
 
 # User-specific files
 *.rsuser
