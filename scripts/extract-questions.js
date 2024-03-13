@@ -54,7 +54,7 @@ db.each('SELECT * FROM post', (err, row) => {
     const slug = generateSlug(row.Title, 200);
     // Strip html from the body to prep summary
     let summary = row.Body.replace(/<[^>]+>/g, '');
-    summary = summary.substring(0, Math.min(summary.length, 200)) + (summary.length > 200 ? '...' : '');
+    summary = summary.substring(0, Math.min(summary.length, 200)).trim() + (summary.length > 200 ? '...' : '');
 
     // Add database update operations to the queue
     queueOperation(done => {
@@ -102,22 +102,22 @@ db.each('SELECT * FROM post', (err, row) => {
     }
 });
 
-function generateSlug(phrase, maxLength = 100) {
-    let str = phrase;
-    if (!str) return '';
+export function generateSlug(phrase, maxLength=100) {
+    let str = phrase
+    if (!str) return ''
     str = str.toLowerCase()
-        .replace(/#/g, '')
-        .replace(/\+\+/g, 'pp');
+        .replace(/["'`?#]/g,'')
+        .replace(/\+\+/g, 'pp')
 
-    str = str.replace(/[^\u0000-\u007F]+/g, '');
-    str = str.replace(/"[^a-z0-9\s-]/g, '-');
-    str = str.substring(0, Math.min(str.length, maxLength)).trim();
-    str = str.replace(/\s+/g, '-');
-    str = str.replace(/-+/g, '-');
+    str = str.replace(/[^\u0000-\u007F]+/g, '')
+    str = str.replace(/[^a-z0-9\s-]/g, '-')
+    str = str.substring(0, Math.min(str.length, maxLength)).trim()
+    str = str.replace(/\s+/g, '-')
+    str = str.replace(/-+/g, '-')
 
     if (str[0] === '-')
-        str = str.substring(1);
-    if (str.length > 0 && str[str.length - 1] === '-')
-        str = str.substring(0, str.length - 1);
-    return str;
+        str = str.substring(1)
+    if (str.length > 0 && str[str.length-1] === '-')
+        str = str.substring(0, str.length-1)
+    return str
 }
