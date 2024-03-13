@@ -2,7 +2,6 @@
 
 import fs from "fs"
 import path from "path"
-// import { execSync } from "child_process"
 
 const dir = process.argv[2]
 
@@ -11,7 +10,6 @@ if (!dir || !fs.existsSync(dir)) {
     process.exit()
 }
 
-let fileCount = 0
 function processDir(dir) {
     const nodes = fs.readdirSync(dir)
     const files = nodes.filter(x => x.endsWith('.json'))
@@ -25,8 +23,8 @@ function processDir(dir) {
         const obj = JSON.parse(json)
         if (obj.PostTypeId != 1) {
             const fileId = file.split('.')[0]
-            const answers = files.filter(x => x.startsWith(`${fileId}.a.`))
-            console.log(`${fileCount++}: ${path.join(dir,file)} ${answers.join(' ')}`)
+            console.log(`${path.join(dir,file)}`)
+            files.filter(x => x.startsWith(`${fileId}.a.`)).forEach(x => console.log(`${path.join(dir,x)}`))
         }
     })
     subDirs.forEach(subDir => processDir(path.join(dir,subDir)))
