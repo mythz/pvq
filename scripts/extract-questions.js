@@ -9,6 +9,8 @@ db.exec('ALTER TABLE posts ADD COLUMN Summary TEXT');
 db.exec('ALTER TABLE posts ADD COLUMN Slug TEXT');
 db.exec('ALTER TABLE posts RENAME TO post');
 
+console.log('Updated database schema');
+
 // Create a queue to store the database operations
 const operationQueue = [];
 let isProcessing = false;
