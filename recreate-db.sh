@@ -1,5 +1,5 @@
 #!/bin/bash
-aws s3 sync s3://stackoverflow-shootout/sql/ ./data/ --exclude="*" --include="*_posts.sql" --endpoint-url https://b95f38ca3a6ac31ea582cd624e6eb385.r2.cloudflarestorage.com
+aws s3 sync s3://stackoverflow-shootout/sql/data_post.sql ./data/data_post.sql --endpoint-url https://b95f38ca3a6ac31ea582cd624e6eb385.r2.cloudflarestorage.com
 
 # Set the path to your SQLite database file
 DB_FILE="./data/filtered.db"
@@ -20,12 +20,8 @@ echo "Database created successfully."
 
 echo "Running *_posts.sql files..."
 
-# Run all the ./data/*_posts.sql files
-for post_file in ./data/*_posts.sql; do
-    echo "Running $post_file..."
-    sqlite3 "$DB_FILE" < "$post_file"
-    echo "$post_file executed successfully."
-done
+# Import data
+sqlite3 "$DB_FILE" < "./data/data_post.sql"
 
 echo "All *_posts.sql files executed successfully."
 

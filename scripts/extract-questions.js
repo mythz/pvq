@@ -5,10 +5,6 @@ const path = require('path');
 // Connect to the SQLite database
 const db = new sqlite3.Database('../data/filtered.db');
 
-db.exec('ALTER TABLE posts ADD COLUMN Summary TEXT');
-db.exec('ALTER TABLE posts ADD COLUMN Slug TEXT');
-db.exec('ALTER TABLE posts RENAME TO post');
-
 console.log('Updated database schema');
 
 // Create a queue to store the database operations
@@ -91,20 +87,16 @@ db.each('SELECT * FROM post', (err, row) => {
         if (err) {
             console.error(err);
         }
-        processedRows++;
-        if (processedRows === db.total) {
-            console.log('All rows processed successfully.');
-            db.close();
-        }
     });
+    processedRows++;
 }, (err) => {
     if (err) {
         console.error(err);
-        db.close();
     }
+    db.close();
 });
 
-export function generateSlug(phrase, maxLength=100) {
+function generateSlug(phrase, maxLength=100) {
     let str = phrase
     if (!str) return ''
     str = str.toLowerCase()

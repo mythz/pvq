@@ -1,4 +1,4 @@
-create table main.posts
+create table main.post
 (
     Id               INTEGER PRIMARY KEY,
     PostTypeId       INTEGER,
@@ -15,6 +15,8 @@ create table main.posts
     LastEditDate     TEXT,
     LastEditorUserId INTEGER,
     OwnerUserId      INTEGER,
-    Tags             TEXT
+    Tags             TEXT,
+    Slug             TEXT,
+    Summary          TEXT
 );
 
