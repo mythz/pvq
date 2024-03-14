@@ -3,7 +3,7 @@ pvq website
 
 DB
  - gemma:2b
- - phi2
+ - phi
  - starcoder2:3b
 
 DR
