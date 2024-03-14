@@ -1,5 +1,5 @@
 #!/bin/bash
-aws s3 sync s3://stackoverflow-shootout/sql/ ./data/ --endpoint-url https://b95f38ca3a6ac31ea582cd624e6eb385.r2.cloudflarestorage.com
+aws s3 sync s3://stackoverflow-shootout/sql/ ./data/ --exclude="*" --include="*_posts.sql" --endpoint-url https://b95f38ca3a6ac31ea582cd624e6eb385.r2.cloudflarestorage.com
 
 # Set the path to your SQLite database file
 DB_FILE="./data/filtered.db"
