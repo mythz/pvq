@@ -1,5 +1,5 @@
 #!/bin/bash
-aws s3 sync s3://stackoverflow-shootout/sql/data_post.sql ./data/data_post.sql --endpoint-url https://b95f38ca3a6ac31ea582cd624e6eb385.r2.cloudflarestorage.com
+aws s3 sync s3://stackoverflow-shootout/sql/data_post.sql ./data/ --endpoint-url https://b95f38ca3a6ac31ea582cd624e6eb385.r2.cloudflarestorage.com
 
 # Set the path to your SQLite database file
 DB_FILE="./data/filtered.db"
@@ -30,15 +30,20 @@ echo "Running fix.sql..."
 sqlite3 "$DB_FILE" < ./data/fix.sql
 echo "Fix script executed successfully."
 
-# Check if --cleanup flag is provided
-if [ "$1" = "--cleanup" ]; then
-    echo "Cleanup flag detected. Running cleanup.sql..."
-    # Run the cleanup.sql script
-    echo "Running cleanup.sql..."
-    sqlite3 "$DB_FILE" < ./data/cleanup.sql
-    echo "Cleanup script executed successfully."
-else
-    echo "No cleanup flag detected. Use --cleanup to remove the original tables."
-fi
+# Run the import script
+echo "Running import script..."
+sleep 1
+
+cd import
+dotnet run
+cd ..
+
+sleep 1
+echo "Import script executed successfully."
+
+# Run the cleanup.sql script
+echo "Running cleanup.sql..."
+sqlite3 "./questions/app.db" < ./data/cleanup.sql
+echo "Cleanup script executed successfully."
 
 echo "Database creation process completed."
