@@ -21,3 +21,11 @@ Format:
     /000/000/009.h.accepted.json - Accepted Answer
     /000/000/009.h.most-voted.json - Most Voted Answer
     /000/000/009.meta.json - answers ranked according another model pass
+
+
+## TODO
+- [ ] Import human answers
+- [ ] Create full text search db
+- [ ] Ranking of answers
+- [ ] Test generation of comments for good context for highest rate answers
+- [ ] Store answer ranking etc in `???.meta.json`
