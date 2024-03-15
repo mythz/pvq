@@ -4,42 +4,46 @@ using ServiceStack.OrmLite;
 using ServiceStack.DataAnnotations;
 
 if (File.Exists("../questions/app.db")) File.Delete("../questions/app.db");
-File.Copy("../questions/filtered.db", "../questions/app.db");
+File.Copy("../data/filtered.db", "../questions/app.db");
 
 var dbFactory = new OrmLiteConnectionFactory("../questions/app.db", SqliteDialect.Provider);
 
 using var db = dbFactory.Open();
-db.ExecuteSql("UPDATE posts SET Tags = REPLACE(Tags, '|', ',')");
-db.ExecuteSql("ALTER TABLE posts ADD COLUMN Slug TEXT");
-db.ExecuteSql("ALTER TABLE posts ADD COLUMN Summary TEXT");
-db.ExecuteSql("ALTER TABLE posts RENAME TO post");
 
-var i = 0;
-foreach(string f in Directory.EnumerateFiles("../questions", "*.json", SearchOption.AllDirectories)
-    .Where(x => x.LastRightPart('/').Length == "000.json".Length))
+var allPosts = db.Select<Post>();
+foreach(var post in allPosts)
 {
-    if (i++ % 100 == 0) Console.WriteLine(i + ": " + f);
-    var json = f.ReadAllText();
     try {
-        var post = (Dictionary<string,object>)JSON.parse(json)!;
-        var id = (int)post["Id"];
-        var title = (string)post["Title"];
-        var body = ((string)post["Body"]).StripHtml().Replace("```"," ");
-
-        var slug = title.GenerateSlug(maxLength:200);
-        var summary = body.SubstringWithEllipsis(0, 200);
-
-        db.UpdateOnly(() => new Post {
-            Slug = slug,
-            Summary = summary,
-        }, where:x => x.Id == id);
-    } 
+        // Populate Summary and Slug
+        if (post.Summary == null || post.Slug == null)
+        {
+            var body = post.Title + " " + post.ContentLicense;
+            var slug = post.Title.GenerateSlug(maxLength:200);
+            var summary = body.SubstringWithEllipsis(0, 200);
+            db.UpdateOnly(() => new Post {
+                Slug = slug,
+                Summary = summary,
+            }, where:x => x.Id == post.Id);
+        }
+    }
     catch(Exception e)
     {
-        Console.WriteLine($"Failed: {f}: {e.Message}");
-        Console.WriteLine(json);
+        Console.WriteLine($"Failed {post.Id}: {e.Message}");
+        Console.WriteLine(post.ToJson());
         //select id, tags, slug, summary from post where id = 24797485;
     }
+}
+
+var updatedPosts = db.Select<Post>();
+
+//Write files to ./questions/???/???/???.json where path is the padded nine 0s of the Id
+foreach(var post in updatedPosts)
+{
+    var path = post.Id.ToString("000000000");
+    var dir = Path.Combine("../questions", path.Substring(0,3), path.Substring(3,3));
+    Directory.CreateDirectory(dir);
+    var json = JsonSerializer.SerializeToString(post);
+    File.WriteAllText(Path.Combine(dir, path.Substring(6,3) + ".json"), json);
 }
 
 public class Post
