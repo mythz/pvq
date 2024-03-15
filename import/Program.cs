@@ -40,16 +40,13 @@ foreach(var post in allPosts)
     {
         Console.WriteLine($"Processed {processedCount} Posts");
     }
-    try {
-        // Populate Summary and Slug
-        if (post.Summary == null || post.Slug == null)
-        {
-            var body = post.Title + " " + post.ContentLicense;
-            var slug = post.Title.GenerateSlug(maxLength:200);
-            var summary = body.SubstringWithEllipsis(0, 200);
-            post.Summary = summary;
-            post.Slug = slug;
-        }
+    try
+    {
+        var body = post.Body;
+        var slug = post.Title.GenerateSlug(maxLength:200);
+        var summary = body.SubstringWithEllipsis(0, 200);
+        post.Summary = summary;
+        post.Slug = slug;
     }
     catch(Exception e)
     {
@@ -94,6 +91,9 @@ foreach(var post in allPosts)
     
     writtenCount++;
 }
+
+db.ExecuteSql("ALTER TABLE post DROP COLUMN Body;");
+db.ExecuteSql("VACUUM;");
 
 public class Post
 {
