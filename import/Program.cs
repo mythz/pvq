@@ -3,15 +3,35 @@ using ServiceStack.Text;
 using ServiceStack.OrmLite;
 using ServiceStack.DataAnnotations;
 
-if (File.Exists("../questions/app.db")) File.Delete("../questions/app.db");
-File.Copy("../data/filtered.db", "../questions/app.db");
+if (File.Exists("../questions/app.db".MapProjectPath())) File.Delete("../questions/app.db".MapProjectPath());
+File.Copy("../data/filtered.db".MapProjectPath(), "../questions/app.db".MapProjectPath());
 
-var dbFactory = new OrmLiteConnectionFactory("../questions/app.db", SqliteDialect.Provider);
+var dbFactory = new OrmLiteConnectionFactory("../questions/app.db".MapProjectPath(), SqliteDialect.Provider);
+var dbFactoryOriginal = new OrmLiteConnectionFactory("../data/stackoverflow_posts.db".MapProjectPath(), SqliteDialect.Provider);
 
 using var db = dbFactory.Open();
 
 Console.WriteLine("Fetching Posts...");
 var allPosts = db.Select<Post>();
+var allPostIds = allPosts.ConvertAll(x => x.Id);
+var allAcceptedAnswerIds = allPosts.ConvertAll(x => x.AcceptedAnswerId)
+    .Where(x => x.HasValue).Select(x => x.Value).ToList();
+
+Console.WriteLine("Selecting Posts from Original DB...");
+using var origDb = dbFactoryOriginal.Open();
+// origDb.Select<Post>(q => Sql.In(q.Id, allPostIds)); produces a SQL error, build the query manually
+var acceptedAnswerSql = $"select * from posts where id in ({string.Join(",", allAcceptedAnswerIds)})";
+var acceptedAnswers = origDb.Select<Post>(acceptedAnswerSql);
+
+// Create a map of accepted answers to question posts
+var acceptedAnswerMap = acceptedAnswers.ToDictionary(x => x.ParentId, x => x);
+
+Console.WriteLine("Selecting Highest voted answers from Original DB...");
+// Create a map of highest scoring answers to question posts, using HAVING MAX(score) to group by parentid
+var highestScoreAnswerSql = $"select * from posts where parentid in ({string.Join(",", allPostIds)}) and posttypeid = 2 group by parentid having max(score)";
+var highestScoreAnswers = origDb.Select<Post>(highestScoreAnswerSql);
+var highestScoreAnswerMap = highestScoreAnswers.ToDictionary(x => x.ParentId, x => x);
+
 Console.WriteLine($"Fetched {allPosts.Count} Posts");
 int processedCount = 0;
 foreach(var post in allPosts)
@@ -57,6 +77,21 @@ foreach(var post in allPosts)
     Directory.CreateDirectory(dir);
     var json = JsonSerializer.SerializeToString(post);
     File.WriteAllText(Path.Combine(dir, path.Substring(6,3) + ".json"), json);
+    
+    //Write the accepted answer if it exists
+    if (acceptedAnswerMap.TryGetValue(post.Id, out var acceptedAnswer))
+    {
+        var acceptedAnswerPath = Path.Combine(dir, path.Substring(6,3) + ".h.accepted.json");
+        File.WriteAllText(acceptedAnswerPath, JsonSerializer.SerializeToString(acceptedAnswer));
+    }
+    
+    //Write the highest scoring answer if it exists
+    if (highestScoreAnswerMap.TryGetValue(post.Id, out var highestScoreAnswer))
+    {
+        var highestScoreAnswerPath = Path.Combine(dir, path.Substring(6,3) + ".h.most-voted.json");
+        File.WriteAllText(highestScoreAnswerPath, JsonSerializer.SerializeToString(highestScoreAnswer));
+    }
+    
     writtenCount++;
 }
 
@@ -92,6 +127,8 @@ public class Post
     public int? OwnerUserId { get; set; }
 
     public List<string> Tags { get; set; }
+    
+    public string Body { get; set; }
     
     public string Slug { get; set; }
 

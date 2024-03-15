@@ -42,8 +42,8 @@ sleep 1
 echo "Import script executed successfully."
 
 # Run the cleanup.sql script
-echo "Running cleanup.sql..."
-sqlite3 "./questions/app.db" < ./data/cleanup.sql
-echo "Cleanup script executed successfully."
+#echo "Running cleanup.sql..."
+#sqlite3 "./questions/app.db" < ./data/cleanup.sql
+#echo "Cleanup script executed successfully."
 
 echo "Database creation process completed."
