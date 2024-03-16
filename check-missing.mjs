@@ -23,7 +23,6 @@ function processDir(dir, dbIds) {
         const dirParts = dir.split('/')
         if (dirParts.length !== 3) return
         const id = parseInt(`${dirParts[1]}${dirParts[2]}${file.split('.')[0]}`, 10)
-        // console.log(id)
         if (!isNaN(id)) {
             dbIds.delete(id)
         }
