@@ -8,6 +8,8 @@ data/*_posts.sql
 data/data_post.sql
 data/*.db
 .idea/
+r2-data/
+.env
 
 # User-specific files
 *.rsuser
