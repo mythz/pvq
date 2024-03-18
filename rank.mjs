@@ -13,11 +13,24 @@ if (!fs.existsSync(questionPath)) {
     process.exit()
 }
 
+// Read the .env file
+const envFile = path.join('./', '.env');
+const envData = fs.readFileSync(envFile, { encoding: 'utf-8' });
+
+// Parse the environment variables
+const envLines = envData.split('\n');
+for (const line of envLines) {
+    const [key, value] = line.trim().split('=');
+    if (key && value) {
+        process.env[key] = value;
+    }
+}
+
 const questionJson = fs.readFileSync(questionPath, 'utf-8')
 const question = JSON.parse(questionJson)
-const id = question.Id
-
-const answerFiles = fs.readdirSync(path.dirname(questionPath)).filter(file => file.startsWith(id) && file.endsWith(`.a.json`))
+// Extract ID and pad to 3 digits with zeros
+const id = `${question.Id}`.padStart(3, '0')
+const answerFiles = fs.readdirSync(path.dirname(questionPath)).filter(file => file.startsWith(id) && file.indexOf(`.a.`) > -1)
 
 let infoStream = null
 function logInfo(message) {
@@ -40,7 +53,7 @@ function logError(message) {
     errorStream.write(message + "\n")
 }
 
-const system = { "role":"system", "content":"You are an AI assistant that ranks answers to a given question. Provide a brief explanation for each ranking." }
+const system = { "role":"system", "content":"You are an AI assistant that votes on the quality and relevance of answers to a given question. Before giving votes, give an critique of each answer based on quality and relevance." }
 const temperature = 0.7
 const max_tokens = 1024
 
@@ -58,8 +71,8 @@ try {
     // Map answer `model` from answers to letter, eg A, B, C, D, E
     const answerMap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').slice(0, answers.length)
 
-    let content = `Question: ${question.Title}\n\n${question.Body}\n\nAnswers:\n${answers.map((answer, index) => `Answer ${answerMap[index]}:\n${answer.content}`).join('\n\n')}\n\nRank the above answers from best to worst, providing a brief explanation for each ranking.`
-    content += `\n\n Return the rankings in the following format: "A: 3, B: 1, C: 2, D: 5, E: 4" etc. , but in a single JSON object.`
+    let content = `Below I have a user question and a set of different answers. I want you to distribute up to 10 votes between the answers based on the quality in relation to the original user question. Original User Question: ${question.Title}\n\n${question.Body}\n\nCritique the below answers to justify your distribution of votes, providing a brief explanation for each before returning the simple JSON object showing your voting results. Make sure you write out your explanation for your vote distribution first.\n\nAnswers:\n${answers.map((answer, index) => `Answer ${answerMap[index]}:\n${answer.content}`).join('\n\n')}\n\nEnd of Answers, now review and distribute your votes between the answers above. Think step by step as to why each answer is good or bad, you don't have to use all 10 votes if the answer quality or relevance is not of a decent quality.`
+    content += `\n\n Lastly, return the votes in the following format: \`{"A": 3, "B": 0 "C": 2, "D": 5, "E": 0}\` etc. , eg in a single JSON object. Do not distribute more than 10 votes.`
 
     logDebug(`=== REQUEST ${id} ===`)
     logDebug(`${id}, ${questionPath}, ${content}`)
