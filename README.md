@@ -29,3 +29,5 @@ Format:
 - [ ] Ranking of answers
 - [ ] Test generation of comments for good context for highest rate answers
 - [ ] Store answer ranking etc in `???.meta.json`
+- [ ] Generate comments for highest rank questions to add value/context
+- [ ] Meta prompt for enhancing answers
