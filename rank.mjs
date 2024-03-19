@@ -125,7 +125,7 @@ try {
     logDebug(`${id}, ${questionPath}, ${content}`)
     logDebug(`=== END REQUEST ${id} ===\n\n`)
 
-    r = await fetch(`https://api.mistral.ai/v1/chat/completions`, {
+    r = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
