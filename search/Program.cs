@@ -6,7 +6,7 @@ using ServiceStack.Data;
 using ServiceStack.DataAnnotations;
 using ServiceStack.OrmLite;
 
-var searchDbPath = "../questions/search.db".MapProjectPath();
+var searchDbPath = "../dist/search.db".MapProjectPath();
 if (File.Exists(searchDbPath)) File.Delete(searchDbPath);
 var dbFactory = new OrmLiteConnectionFactory(searchDbPath, SqliteDialect.Provider);
 
