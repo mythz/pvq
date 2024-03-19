@@ -10,7 +10,7 @@ data/*.db
 .idea/
 r2-data/
 .env
-.dist/
+dist/
 
 # User-specific files
 *.rsuser
