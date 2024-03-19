@@ -5,8 +5,8 @@ import path from "path"
 
 console.log("Starting...")
 
-let questionPath = process.argv[2]
-let model = process.argv[3]
+let questionPath = process.argv[2] ?? './questions/000/105/372.json'
+let model = process.argv[3] ?? 'open-mixtral-8x7b'
 let port = process.argv[4] ?? '11434'
 if (!model) throw "model required"
 
@@ -34,7 +34,7 @@ const questionJson = fs.readFileSync(questionPath, 'utf-8')
 const question = JSON.parse(questionJson)
 console.log(question)
 // Extract ID and pad to 3 digits with zeros
-const id = `${question.Id}`.padStart(3, '0')
+const id = `${lastRightPart(lastLeftPart(questionPath,'.'),'/')}`.padStart(3, '0')
 
 const answerFiles = fs.readdirSync(path.dirname(questionPath)).filter(file => file.startsWith(id) && file.indexOf(`.a.`) > -1)
 let humanAnswerFiles = fs.readdirSync(path.dirname(questionPath)).filter(file => file.startsWith(id) && file.indexOf(`.h.`) > -1)
@@ -79,6 +79,10 @@ const max_tokens = 1024
 
 let modelMap = {};
 
+logDebug('=== ANSWER FILES ===')
+logDebug(allAnswerFiles)
+logDebug('=== END ANSWER FILES ===\n\n')
+
 let r = null
 let startTime = performance.now()
 try {
@@ -90,7 +94,7 @@ try {
             // model is human-accepted and human-most-voted
             let humanModel = lastRightPart(file, '.h.')
             humanModel = lastLeftPart(humanModel, '.')
-            return {model: 'human-' + humanModel, content: answer.Body}
+            return {model: humanModel, content: answer.Body};
         }
         // file name has model name between .a. and .json
         let model = lastRightPart(file, '.a.')
@@ -116,6 +120,7 @@ try {
     answers.forEach((answer, index) => {
         modelMap[answerMap[index]] = answer.model
     })
+
     logDebug(`=== REQUEST ${id} ===`)
     logDebug(`${id}, ${questionPath}, ${content}`)
     logDebug(`=== END REQUEST ${id} ===\n\n`)
@@ -177,17 +182,19 @@ if (content) {
         fs.writeFileSync(lastLeftPart(questionPath,'.') + `.e.${safeModel}.json`, JSON.stringify(res, undefined, 2), 'UTF-8')
         process.exit()
     }
-    // write the voteString to a file
-    logDebug(voteString[0])
+    // Resolve model name to vote mapping before writing to file
+    let voteMap = {}
+    for (let key in voteJson) {
+        voteMap[modelMap[key]] = voteJson[key]
+    }
     let result = {
-        votes: voteJson,
-        modelMap: modelMap
+        modelVotes: voteMap
     }
     fs.writeFileSync(lastLeftPart(questionPath,'.') + `.v.${safeModel}.json`, JSON.stringify(result, undefined, 2), 'UTF-8')
     let validation = {
         content: content,
         response: res,
-        votes: voteJson,
+        modelVotes: voteJson,
     }
     fs.writeFileSync(lastLeftPart(questionPath,'.') + `.validation.${safeModel}.json`, JSON.stringify(validation, undefined,2), 'UTF-8')
 } else {
