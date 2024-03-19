@@ -21,11 +21,18 @@ function processDir(dir) {
     const subDirs = nodes.filter(x => !x.includes('.'))
 
     const safeModel = model.replace(/:/g,'-')
-    const answerIds = files.filter(x => x.endsWith(`.a.${safeModel}.json`)).map(x => x.split('.')[0])
     const questionLength = '000.json'.length
-    const candidates = files.filter(x => x.length == questionLength && x.endsWith('.json') && !answerIds.includes(x.split('.')[0]))
+    const candidates = files.filter(x => x.length == questionLength && x.endsWith('.json'))
 
     candidates.forEach(file => {
+        // If the votes result file doesn't already exist, process, otherwise skip
+        // Get Id from file name
+        const id = file.split('.')[0]
+        const votesFile = path.join(dir,`${id}.v.${safeModel}.json`)
+        if (fs.existsSync(votesFile)) {
+            console.log(`skipping: ${file}`)
+            return
+        }
         console.log(`${fileCount++}: ./rank.mjs ${path.join(dir,file)}`)
         const r = execSync(`./rank.mjs ${path.join(dir,file)} ${model} ${port}`).toString()
         console.log(r)
