@@ -3,6 +3,8 @@
 import fs from "fs"
 import path from "path"
 
+console.log("Starting...")
+
 let questionPath = process.argv[2]
 let model = process.argv[3]
 let port = process.argv[4] ?? '11434'
@@ -26,11 +28,22 @@ for (const line of envLines) {
     }
 }
 
+console.log("Starting...")
+
 const questionJson = fs.readFileSync(questionPath, 'utf-8')
 const question = JSON.parse(questionJson)
+console.log(question)
 // Extract ID and pad to 3 digits with zeros
 const id = `${question.Id}`.padStart(3, '0')
+
 const answerFiles = fs.readdirSync(path.dirname(questionPath)).filter(file => file.startsWith(id) && file.indexOf(`.a.`) > -1)
+let humanAnswerFiles = fs.readdirSync(path.dirname(questionPath)).filter(file => file.startsWith(id) && file.indexOf(`.h.`) > -1)
+// if there is a duplicate answer in humanAnswerFiles, eg have the same Id result from readHumanAnswerFile, remove it
+if(humanAnswerFiles.length > 1 &&  readHumanAnswerFile(humanAnswerFiles[0]) === readHumanAnswerFile(humanAnswerFiles[1])) {
+    humanAnswerFiles = humanAnswerFiles.slice(1)
+}
+
+const allAnswerFiles = answerFiles.concat(humanAnswerFiles)
 
 let infoStream = null
 function logInfo(message) {
@@ -53,6 +66,13 @@ function logError(message) {
     errorStream.write(message + "\n")
 }
 
+// Function to read a human answer file, and return the Id
+function readHumanAnswerFile(file) {
+    const answerJson = fs.readFileSync(path.join(path.dirname(questionPath), file), 'utf-8')
+    const answer = JSON.parse(answerJson)
+    return answer.Id
+}
+
 const system = { "role":"system", "content":"You are an AI assistant that votes on the quality and relevance of answers to a given question. Before giving votes, give an critique of each answer based on quality and relevance." }
 const temperature = 0.2
 const max_tokens = 1024
@@ -62,7 +82,16 @@ let modelMap = {};
 let r = null
 let startTime = performance.now()
 try {
-    const answers = answerFiles.sort(() => Math.random() - 0.5).map(file => {
+    let answers = allAnswerFiles.sort(() => Math.random() - 0.5).map(file => {
+        // Check if `.h.` is in the file name, if so, it's a human answer
+        if (file.indexOf(`.h.`) > -1) {
+            const answerJson = fs.readFileSync(path.join(path.dirname(questionPath), file), 'utf-8')
+            const answer = JSON.parse(answerJson)
+            // model is human-accepted and human-most-voted
+            let humanModel = lastRightPart(file, '.h.')
+            humanModel = lastLeftPart(humanModel, '.')
+            return {model: 'human-' + humanModel, content: answer.Body}
+        }
         // file name has model name between .a. and .json
         let model = lastRightPart(file, '.a.')
         model = lastLeftPart(model, '.')
@@ -77,6 +106,8 @@ try {
     let content = `Below I have a user question and a set of different answers. I want you to distribute up to a sum total of 10 votes between the answers based on the quality in relation to the original user question. Original User Question: ${question.Title}\n\n${question.Body}\n\nCritique the below answers to justify your distribution of votes, providing a brief explanation for each before returning the simple JSON object showing your voting results. Make sure you write out your explanation for your vote distribution first.\n\nAnswers:\n${answers.map((answer, index) => `Answer ${answerMap[index]}:\n${answers[index].content}`).join('\n\n')}\n\nEnd of Answers\n\nNow review and distribute your votes between the answers above. Think step by step as to why each answer is good or bad, you don't have to use all 10 votes if the answer quality or relevance is not of a decent quality. Vote 0 if the answer is not relevant or of low quality, and vote 1-10 if the answer is relevant, based on quality.`
     content += `\n\n Lastly, return the votes in the following format: \`{"A": 3, "B": 0 "C": 2, "D": 5, "E": 0}\` etc. , eg in a single JSON object. Do not distribute more than 10 votes.
     
+    Note: This question has been tagged with the following tags: ${question.Tags.join(', ')}. This information is important to consider when voting since it will likely include the specific language or framework being used and/or requested.
+    Note: Answers in different languages than requested should be penalized by giving a -1 vote.
     Note: You must include the JSON representation of your votes in your response at the end. Do not forget this.
     Note: To ensure the best quality of votes, please ensure that you have read the question and all the answers carefully.
     Note: Irrelevant answers should be penalized by giving a -1 vote.
@@ -148,7 +179,6 @@ if (content) {
     }
     // write the voteString to a file
     logDebug(voteString[0])
-    logDebug(content)
     let result = {
         votes: voteJson,
         modelMap: modelMap

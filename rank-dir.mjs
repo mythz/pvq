@@ -33,7 +33,7 @@ function processDir(dir) {
             console.log(`skipping: ${file}`)
             return
         }
-        console.log(`${fileCount++}: ./rank.mjs ${path.join(dir,file)}`)
+        console.log(`${fileCount++}: ./rank.mjs ${path.join(dir,file)} ${model} ${port}`)
         const r = execSync(`./rank.mjs ${path.join(dir,file)} ${model} ${port}`).toString()
         console.log(r)
     })
