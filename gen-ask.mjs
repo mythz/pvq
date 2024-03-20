@@ -53,8 +53,8 @@ const res2 = await r2.json()
 let advResponse = res2.choices[0].message.content.trim()
 
 // Write the advanced response to a file
-const advancedResponseFile = path.join(dir,`${path.parse(questionFile).name}.adv.response.json`);
-fs.writeFileSync(advancedResponseFile, JSON.stringify({ response: advResponse }, null, 4));
+const advancedResponseFile = path.join(dir,`${path.parse(questionFile).name}.adv-answer.json`);
+fs.writeFileSync(advancedResponseFile, JSON.stringify({ answer: advResponse }, null, 4));
 
 console.log(`Advanced response generated and saved to ${advancedResponseFile}`);
 
