@@ -17,7 +17,6 @@ USING FTS5(
     {nameof(PostFts.RefId)},
     {nameof(PostFts.UserName)},
     {nameof(PostFts.Body)},
-    {nameof(PostFts.Title)},
     {nameof(PostFts.Tags)}
 );");
 
@@ -50,14 +49,12 @@ foreach (var allFile in allFiles)
                 {nameof(PostFts.RefId)},
                 {nameof(PostFts.UserName)},
                 {nameof(PostFts.Body)},
-                {nameof(PostFts.Title)},
                 {nameof(PostFts.Tags)}
             ) VALUES (
                 {post.Id},
                 '{post.Id}',
                 'stackoverflow',
-                {SqliteDialect.Provider.GetQuotedValue(post.Body)},
-                {SqliteDialect.Provider.GetQuotedValue(post.Title)},
+                {SqliteDialect.Provider.GetQuotedValue(post.Title + "\n\n" + post.Body)},
                 {SqliteDialect.Provider.GetQuotedValue(post.Tags)}
             )");
         }
@@ -136,7 +133,6 @@ public class PostFts
     public string RefId { get; set; }
     public string UserName { get; set; }
     public string Body { get; set; }
-    public string? Title { get; set; }
     public string? Tags { get; set; }
 }
 
