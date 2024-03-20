@@ -10,7 +10,8 @@ DR
  - mistral:7b
  - codellama:13B
  - gemma:7b
- - starcoder2:15b
+ - ~~starcoder2:15b~~
+ - deepseek-coder:6.7b
  - mixtral
 
 Format:
