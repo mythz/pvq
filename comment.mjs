@@ -34,6 +34,8 @@ let commentResponse = res.choices[0].message.content.trim()
 
 // Write the advanced prompt to a file
 const commentResultFile = path.join(dir,`${path.parse(questionFile).name}.comment.json`);
-fs.writeFileSync(commentResultFile, JSON.stringify({ comment: commentResponse }, null, 4));
+let val = {};
+val[model] = commentResponse
+fs.writeFileSync(commentResultFile, JSON.stringify(val, null, 4));
 
 console.log(`Comment saved to ${commentResultFile}`);
