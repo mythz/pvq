@@ -29,9 +29,10 @@ var existingIds = new HashSet<int>();
 var modelAnswerNextId = 100_000_000;
 
 var i = 0;
-foreach (var file in allFiles)
+foreach (var allFile in allFiles)
 {
     i++;
+    var file = allFile.Replace('\\','/');
     var filePath = file.Substring(questionsDir.Length);
     var id = long.Parse(filePath.LeftPart('.').Replace("/",""));
     var fileType = filePath.RightPart('.').LastLeftPart('.');
