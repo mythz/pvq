@@ -114,7 +114,7 @@ db.ExecuteSql("VACUUM;");
 
 void log(string message)
 {
-    if (i % 100 == 0)
+    if (i % 200 == 0)
     {
         Console.WriteLine(i + ": " + message);
     }
