@@ -3,7 +3,7 @@
 import fs from "fs"
 import path from "path"
 
-const dir = process.argv[2]
+const dir = process.argv[2] ?? 'questions'
 
 if (!dir || !fs.existsSync(dir)) {
     console.log('dir does not exist', dir)
