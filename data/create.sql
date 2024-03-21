@@ -17,6 +17,8 @@ create table main.post
     OwnerUserId      INTEGER,
     Tags             TEXT,
     Slug             TEXT,
-    Summary          TEXT
+    Summary          TEXT,
+    RankDate         TEXT,
+    AnswerCount      INTEGER
 );
 

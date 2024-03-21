@@ -93,6 +93,7 @@ foreach(var post in allPosts)
 }
 
 db.ExecuteSql("ALTER TABLE post DROP COLUMN Body;");
+db.ExecuteSql("ALTER TABLE post DROP COLUMN ContentLicense;");
 db.ExecuteSql("VACUUM;");
 
 public class Post
