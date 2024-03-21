@@ -59,7 +59,7 @@ logDebug(`=== END REQUEST ${id} ===\n\n`)
 
 const system = { "role":"system", "content":"You are a friendly AI Assistant that helps answer developer questions" }
 const temperature = 0.7
-const max_tokens = -1
+const max_tokens = 2048
 
 let r = null
 let startTime = performance.now()
