@@ -17,7 +17,8 @@ USING FTS5(
     {nameof(PostFts.RefId)},
     {nameof(PostFts.UserName)},
     {nameof(PostFts.Body)},
-    {nameof(PostFts.Tags)}
+    {nameof(PostFts.Tags)},
+    {nameof(PostFts.ModifiedDate)}
 );");
 
 var questionsDir = "../questions/";
@@ -26,11 +27,13 @@ Console.WriteLine($"Found {allFiles.Length} files");
 
 var existingIds = new HashSet<int>();
 var modelAnswerNextId = 100_000_000;
+var minDate = new DateTime(2008,08,1);
 
 var i = 0;
 foreach (var allFile in allFiles)
 {
     i++;
+    // if (i > 100) break;
     var file = allFile.Replace('\\','/');
     var filePath = file.Substring(questionsDir.Length);
     var id = long.Parse(filePath.LeftPart('.').Replace("/",""));
@@ -44,18 +47,21 @@ foreach (var allFile in allFiles)
             if (existingIds.Contains(post.Id)) continue;
             existingIds.Add(post.Id);
             log($"Adding Question {filePath}");
+            var modifiedDate = post.LastEditDate ?? (post.CreationDate > minDate ? post.CreationDate : minDate);
             db.ExecuteNonQuery($@"INSERT INTO {nameof(PostFts)} (
                 rowid,
                 {nameof(PostFts.RefId)},
                 {nameof(PostFts.UserName)},
                 {nameof(PostFts.Body)},
-                {nameof(PostFts.Tags)}
+                {nameof(PostFts.Tags)},
+                {nameof(PostFts.ModifiedDate)}
             ) VALUES (
                 {post.Id},
                 '{post.Id}',
                 'stackoverflow',
                 {SqliteDialect.Provider.GetQuotedValue(post.Title + "\n\n" + post.Body)},
-                {SqliteDialect.Provider.GetQuotedValue(post.Tags)}
+                {SqliteDialect.Provider.GetQuotedValue(post.Tags)},
+                {SqliteDialect.Provider.GetQuotedValue(modifiedDate.ToString("yyyy-MM-dd HH:mm:ss"))}
             )");
         }
         else if (fileType.StartsWith("h."))
@@ -65,16 +71,19 @@ foreach (var allFile in allFiles)
             existingIds.Add(post.Id);
             var userName = fileType.Substring(2); 
             log($"Adding Human Answer {filePath}");
+            var modifiedDate = post.LastEditDate ?? (post.CreationDate > minDate ? post.CreationDate : minDate);
             db.ExecuteNonQuery($@"INSERT INTO {nameof(PostFts)} (
                 rowid,
                 {nameof(PostFts.RefId)},
                 {nameof(PostFts.UserName)},
-                {nameof(PostFts.Body)}
+                {nameof(PostFts.Body)},
+                {nameof(PostFts.ModifiedDate)}
             ) VALUES (
                 {post.Id},
                 '{id}-{userName}',
                 '{userName}',
-                {SqliteDialect.Provider.GetQuotedValue(post.Body)}
+                {SqliteDialect.Provider.GetQuotedValue(post.Body)},
+                {SqliteDialect.Provider.GetQuotedValue(modifiedDate.ToString("yyyy-MM-dd HH:mm:ss"))}
             )");
         }
         else if (fileType.StartsWith("a."))
@@ -86,17 +95,22 @@ foreach (var allFile in allFiles)
             var message = (Dictionary<string,object>)choice["message"];
             var body = (string)message["content"];
             var userName = fileType.Substring(2); 
+            var modifiedDate = obj.TryGetValue("created", out var oCreated) && oCreated is int created
+                ? DateTimeOffset.FromUnixTimeSeconds(created).DateTime
+                : File.GetLastWriteTime(file);
             log($"Adding Model Answer {filePath} {userName} {body}");
             db.ExecuteNonQuery($@"INSERT INTO {nameof(PostFts)} (
                 rowid,
                 {nameof(PostFts.RefId)},
                 {nameof(PostFts.UserName)},
-                {nameof(PostFts.Body)}
+                {nameof(PostFts.Body)},
+                {nameof(PostFts.ModifiedDate)}
             ) VALUES (
                 {modelAnswerNextId++},
                 '{id}-{userName}',
                 '{userName}',
-                {SqliteDialect.Provider.GetQuotedValue(body)}
+                {SqliteDialect.Provider.GetQuotedValue(body)},
+                {SqliteDialect.Provider.GetQuotedValue(modifiedDate.ToString("yyyy-MM-dd HH:mm:ss"))}
             )");
         }
         else
@@ -134,14 +148,14 @@ public class PostFts
     public string UserName { get; set; }
     public string Body { get; set; }
     public string? Tags { get; set; }
+    public string? ModifiedDate { get; set; }
 }
 
 public class Post
 {
     public int Id { get; set; }
-    
-    [Required]
-    public int PostTypeId { get; set; }
+
+    [Required] public int PostTypeId { get; set; }
 
     public int? AcceptedAnswerId { get; set; }
 
@@ -152,8 +166,6 @@ public class Post
     public int? ViewCount { get; set; }
 
     public string Title { get; set; }
-
-    public string ContentLicense { get; set; }
 
     public int? FavoriteCount { get; set; }
 
@@ -168,10 +180,14 @@ public class Post
     public int? OwnerUserId { get; set; }
 
     public string Tags { get; set; }
-    
-    public string Body { get; set; }
-    
+
     public string Slug { get; set; }
 
     public string Summary { get; set; }
+    
+    public DateTime? RankDate { get; set; }
+    
+    public int? AnswerCount { get; set; }
+
+    [Ignore] public string? Body { get; set; }
 }
