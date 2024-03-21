@@ -1,13 +1,19 @@
+using System.Diagnostics;
 using ServiceStack;
 using ServiceStack.Text;
 using ServiceStack.OrmLite;
 using ServiceStack.DataAnnotations;
 
-if (File.Exists("../questions/app.db".MapProjectPath())) File.Delete("../questions/app.db".MapProjectPath());
-File.Copy("../data/filtered.db".MapProjectPath(), "../questions/app.db".MapProjectPath());
+// Check if running as debug or not
+var isDebug =  Debugger.IsAttached;
+var basePath = isDebug ? "../../../../questions" : "../questions";
+var baseDataPath = isDebug ? "../../../../data" : "../data";
 
-var dbFactory = new OrmLiteConnectionFactory("../questions/app.db".MapProjectPath(), SqliteDialect.Provider);
-var dbFactoryOriginal = new OrmLiteConnectionFactory("../data/stackoverflow_posts.db".MapProjectPath(), SqliteDialect.Provider);
+if (File.Exists($"{basePath}/app.db".MapProjectPath())) File.Delete($"{basePath}/app.db".MapProjectPath());
+File.Copy($"{baseDataPath}/filtered.db".MapProjectPath(), $"{basePath}/app.db".MapProjectPath());
+
+var dbFactory = new OrmLiteConnectionFactory($"{basePath}/app.db".MapProjectPath(), SqliteDialect.Provider);
+var dbFactoryOriginal = new OrmLiteConnectionFactory($"{baseDataPath}/stackoverflow_posts.db".MapProjectPath(), SqliteDialect.Provider);
 
 using var db = dbFactory.Open();
 
@@ -45,8 +51,17 @@ foreach(var post in allPosts)
         var body = post.Body;
         var slug = post.Title.GenerateSlug(maxLength:200);
         var summary = body.SubstringWithEllipsis(0, 200);
+        var path = post.Id.ToString("000000000");
+        var dir = Path.Combine($"{basePath}", path.Substring(0,3), path.Substring(3,3));
+        // Count all .h and .a files for this post
+        var filePrefix = path.Substring(6, 3);
+
+        var allFiles = Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories);
+        var allAnswerFilesCount = allFiles.Count(x => x.Contains($"{filePrefix}.a."));
+        allAnswerFilesCount += highestScoreAnswerMap.Count(x => x.Key == post.Id);
         post.Summary = summary;
         post.Slug = slug;
+        post.AnswerCount = allAnswerFilesCount;
     }
     catch(Exception e)
     {
@@ -70,7 +85,7 @@ foreach(var post in allPosts)
         Console.WriteLine($"Written {writtenCount} Posts");
     }
     var path = post.Id.ToString("000000000");
-    var dir = Path.Combine("../questions", path.Substring(0,3), path.Substring(3,3));
+    var dir = Path.Combine($"{basePath}", path.Substring(0,3), path.Substring(3,3));
     Directory.CreateDirectory(dir);
     var json = JsonSerializer.SerializeToString(post);
     File.WriteAllText(Path.Combine(dir, path.Substring(6,3) + ".json"), json);
@@ -113,8 +128,6 @@ public class Post
 
     public string Title { get; set; }
 
-    public string ContentLicense { get; set; }
-
     public int? FavoriteCount { get; set; }
 
     public DateTime CreationDate { get; set; }
@@ -134,4 +147,8 @@ public class Post
     public string Slug { get; set; }
 
     public string Summary { get; set; }
+
+    public int? AnswerCount { get; set; }
+
+    public DateTime? RankDate { get; set; }
 }
