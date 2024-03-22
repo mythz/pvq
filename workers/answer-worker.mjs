@@ -23,7 +23,7 @@ const models = model.split(',')
 
 const jobOptions = {
     "ask": { "endpoint": "https://pvq.app/jobs" },
-    "ask-local": { "endpoint": "http://localhost:5000/jobs"}
+    "ask-local": { "endpoint": "http://localhost:5000/api/CheckPostJobs"}
 }
 
 const modelDetails = {
