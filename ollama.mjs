@@ -19,15 +19,21 @@ for (const line of envLines) {
     }
 }
 
-function askOllama(system, user, model, port, temperature, max_tokens, base_url) {
+const providerUrlMapping = {
+    "groq": { "url": "https://api.groq.com/openai"},
+    "openai": { "url": "https://api.openai.com"},
+    "ollama": { "url": "http://localhost", "port": "11434"},
+    "mistral": { "url": "https://api.mistral.ai"}
+};
+
+function askOllama(system, user, model,temperature, max_tokens, provider = 'ollama', port = null) {
     if(!system) system = systemDefault
     if(!temperature) temperature = temperatureDefault
     if(!max_tokens) max_tokens = maxTokensDefault
-    if(!port) port = 11434
-    if(!base_url) base_url = baseUrlDefault
+    let base_url = providerUrlMapping[provider].url
+    let portStr = port ?? providerUrlMapping[provider].port
+    base_url = portStr == null ? base_url : `${base_url}:${portStr}`
 
-    if(base_url === baseUrlDefault)
-        base_url += `:${port}`
     let fullUrl = `${base_url}/v1/chat/completions`
     console.log(fullUrl)
     return fetch(fullUrl, {

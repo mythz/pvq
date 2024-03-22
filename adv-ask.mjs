@@ -2,12 +2,15 @@ import fs from "fs"
 import path from "path"
 import processFile from "./apply-meta-template.mjs"
 import askOllama from "./ollama.mjs"
+import loadEnv from "./load-env.mjs";
 
 // Check if the required arguments are provided, eg questionFile and model
 if (process.argv.length !== 4) {
     console.error('Usage: node gen-ask.mjs <question_file> <model>');
     process.exit(1);
 }
+
+loadEnv();
 
 // Get the input file and model from the command-line arguments
 const questionFile = process.argv[2];
@@ -24,7 +27,7 @@ const advancedQuestionMetaPrompt = processFile(metaTemplateFile, questionFile);
 // Call ollama to generate the advanced question prompt
 let r = null
 try {
-    r = await askOllama('You are a helpful AI assistant.',advancedQuestionMetaPrompt, model, 11435, 0.7, 1024, 'https://api.groq.com/openai');
+    r = await askOllama('You are a helpful AI assistant.',advancedQuestionMetaPrompt, model, 0.7, 1024, 'groq');
 } catch (e) {
     console.error(e);
     process.exit(1);
@@ -42,9 +45,8 @@ console.log(`Advanced prompt generated and saved to ${advancedPromptFile}`);
 // Take that advanced prompt and generate a response
 // Call ollama to generate the advanced question prompt
 let r2 = null
-
 try {
-    r2 = await askOllama('You are a helpful AI assistant.',advPrompt, model, 11435, 0.7, 1024,'https://api.groq.com/openai');
+    r2 = await askOllama('You are a helpful AI assistant.',advPrompt, model, 0.7, 1024,'groq');
 } catch (e) {
     console.error(e);
     process.exit(1);

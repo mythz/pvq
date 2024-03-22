@@ -23,7 +23,7 @@ const commentPrompt = processFile(commentTemplateFile, questionFile);
 
 let r = null
 try {
-    r = await askOllama('You are a helpful AI assistant.',commentPrompt, model, 11435, 0.7, 1024, 'https://api.groq.com/openai');
+    r = await askOllama('You are a helpful AI assistant.',commentPrompt, model, 0.7, 1024, 'groq');
 } catch (e) {
     console.error(e);
     process.exit(1);
