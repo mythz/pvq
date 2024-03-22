@@ -84,7 +84,7 @@ async function generateAnswer(postDto, model,provider, port) {
     let body = postDto.body
     let title = postDto.title
     let tags = postDto.tags
-    let id = postDto.id
+    let id = postDto.postId;
     let jobId = postDto.jobId
 
     let system = {"role": "system", "content": "You are a friendly AI Assistant that helps answer developer questions. A user has a technical question with the following details: "}
