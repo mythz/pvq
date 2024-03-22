@@ -23,7 +23,7 @@ const models = model.split(',')
 
 const jobOptions = {
     "ask": { "endpoint": "https://pvq.app/jobs" },
-    "ask-local": { "endpoint": "https://localhost:5001/api/CheckPostJobs"}
+    "ask-local": { "endpoint": "http://localhost:5000/jobs"}
 }
 
 const modelDetails = {
@@ -40,30 +40,38 @@ readDotEnv();
 async function pollJob(jobType,models,workerId) {
     let jobUrl = jobOptions[jobType].endpoint
     let url = `${jobUrl}?workerId=${workerId}&models=${models.join(',')}`
-    let res = await fetch(url)
+    let res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        }
+    });
+    console.log(`Polling ${url}`)
+    console.log(res);
     return await res.json()
 }
 
 
 async function processJobs(jobType, models, workerId, provider, port) {
-    let job = await pollJob(jobType,models,workerId)
-    if (job.results != null && job.results.length > 0) {
-        let post = job.data
-        let modelToUse = job.model ?? model
+    let jobs = await pollJob(jobType,models,workerId)
+    if (jobs.results != null && jobs.results.length > 0) {
+        let post = jobs.results[0];
+        let modelToUse = jobs.model ?? models[0]
         // Ensure the models is in the list of available models
         if (!models.includes(modelToUse)) {
             console.log(`Model ${modelToUse} not available, using fallback model ${models[0]}`)
             modelToUse = models[0]
         }
         let answer = await generateAnswer(post, modelToUse, provider, port)
-        let res = await fetch(`${jobUrl}/${job.id}`, {
+        let res = await fetch(`${jobUrl}/${jobs.id}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
             },
-            body: JSON.stringify({postId: post.id, jobId: job.id, body: answer, userName: modelDetails[modelToUse].name, workerId: workerId, model: modelToUse})
+            body: JSON.stringify({postId: post.id, jobId: jobs.id, body: answer, userName: modelDetails[modelToUse].name, workerId: workerId, model: modelToUse})
         })
         let resJson = await res.json()
         console.log(resJson)
