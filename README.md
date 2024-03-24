@@ -32,3 +32,6 @@ Format:
 - [ ] Store answer ranking etc in `???.meta.json`
 - [ ] Generate comments for highest rank questions to add value/context
 - [ ] Meta prompt for enhancing answers
+- [ ] Add string? `RefId` Column to Post
+- [ ] Rename stackoverflow-shootout bucket to pvq
+- [ ] Create pvq-build bucket, move all /sql, app.db + other non-data to it
