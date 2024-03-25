@@ -29,7 +29,10 @@ if (!fs.existsSync(path)) {
 
 const json = fs.readFileSync(path, 'utf-8')
 const obj = JSON.parse(json)
-const id = obj.Id
+const id = obj.Id ?? obj.id
+const title = obj.Title ?? obj.title
+const body = obj.Body ?? obj.body
+const tags = obj.Tags ?? obj.tags ?? []
 
 
 let infoStream = null
@@ -54,7 +57,7 @@ function logError(message) {
 }
 
 logDebug(`=== REQUEST ${id} ===`)
-logDebug(`${id}, ${path}, ${obj.Body}`)
+logDebug(`${id}, ${path}, ${body}`)
 logDebug(`=== END REQUEST ${id} ===\n\n`)
 
 const system = { "role":"system", "content":"You are a friendly AI Assistant that helps answer developer questions. Think step by step and assist the user with their question, ensuring that your answer is relevant, on topic and provides actionable advice with code examples as appropriate." }
@@ -64,7 +67,7 @@ const max_tokens = 2048
 let r = null
 let startTime = performance.now()
 try {
-    const content = "Title: " + obj.Title + "\n\nTags:" + obj.Tags.join(',') + "\n\n" + obj.Body
+    const content = "Title: " + title + "\n\nTags:" + tags.join(',') + "\n\n" + body
     r = await fetch(`http://localhost:${port}/v1/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
