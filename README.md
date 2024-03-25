@@ -25,10 +25,27 @@ Format:
 
 
 ## TODO
-- [ ] Import human answers
-- [ ] Create full text search db
+
+DR
+
 - [ ] Ranking of answers
 - [ ] Test generation of comments for good context for highest rate answers
 - [ ] Store answer ranking etc in `???.meta.json`
-- [ ] Generate comments for highest rank questions to add value/context
+- [ ] Add string? `CreatedBy`, `ModifiedBy` and `RefId` Column to Post
+- [ ] Rename stackoverflow-shootout bucket to pvq
+- [ ] Create pvq-build bucket, move all /sql, app.db + other non-data to it
 - [ ] Meta prompt for enhancing answers
+- [ ] Scripts to populate ModelVotes in DB
+- [ ] Scripts to calculate Leaderboard Page
+- [ ] Leaderboard Page and Blog Post
+- [ ] Setup Worker Scripts
+
+DB
+
+- [ ] API to update all user passwords
+- [ ] API to retrieve FS/R2 question.json
+- [ ] Delete Questions
+- [ ] About BlogPost and Page
+- [ ] Add Human Answer
+- [ ] Edit Question/Answers
+

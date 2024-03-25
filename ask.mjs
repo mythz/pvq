@@ -107,7 +107,7 @@ if (content) {
     logError(`ERROR ${id}: missing response`)
     fs.writeFileSync(lastLeftPart(path,'.') + `.e.${safeModel}.json`, JSON.stringify(res, undefined, 2), 'UTF-8')
 }
-logDebug(`\n=== END RESPONSE ${id} ===\n\n`)
+logDebug(`\n=== END RESPONSE ${id} in ${elapsed_ms}ms ===\n\n`)
 
 function lastLeftPart(s, needle) {
     if (s == null) return null
@@ -115,11 +115,4 @@ function lastLeftPart(s, needle) {
     return pos == -1
         ? s
         : s.substring(0, pos)
-}
-function lastRightPart(s, needle) {
-    if (s == null) return null
-    let pos = s.lastIndexOf(needle)
-    return pos == -1
-        ? s
-        : s.substring(pos + needle.length)
 }
