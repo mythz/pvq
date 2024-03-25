@@ -111,7 +111,7 @@ while (true) {
                     const r = execSync(`./ask.mjs ${id} ${model} ${port}`).toString()
                     console.log(r)
 
-                    const answerFile = `${fileId}.a.${model}.json`
+                    const answerFile = `${fileId}.a.${model.replace(/\:/g,'-')}.json`
                     const answerPath = `${questionsDir}/${answerFile}`
                     if (!fs.existsSync(answerPath)) {
                         await fail(jobId, `${answerPath} does not exist`)
