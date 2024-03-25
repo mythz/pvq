@@ -3,7 +3,7 @@ import path from "path"
 
 const BASE_URL = `https://pvq.app`
 const SYSTEM_PROMPT = { "role":"system", "content":"You are a friendly AI Assistant that helps answer developer questions. Think step by step and assist the user with their question, ensuring that your answer is relevant, on topic and provides actionable advice with code examples as appropriate." }
-const ModelProviders = {}
+let ModelProviders = {}
 
 export function openAiDefaults() {
     return {
@@ -15,11 +15,20 @@ export function openAiDefaults() {
 
 export function openAiUrl(model,port) {
     let provider = ModelProviders[model]
+    const apiPath = '/v1/chat/completions'
     return provider === 'groq'
-        ? `https://api.groq.com/openai`
+        ? `https://api.groq.com/openai${apiPath}`
         : provider === 'openai'
-            ? `https://api.openai.com`
-            : `http://localhost:${port ?? '11434'}/v1/chat/completions`
+            ? `https://api.openai.com${apiPath}`
+            : `http://localhost:${port ?? '11434'}${apiPath}`
+}
+
+export function openAiFromModel(model) {
+    const mapping = {
+        'mixtral-8x7b-32768': 'mixtral',
+        'gemma-7b-it': 'gemma',
+    }
+    return mapping[model] ?? model
 }
 
 export function openAiModel(model) {
@@ -48,12 +57,15 @@ function openAi(opt) {
         'Accept': 'application/json',
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
     }
+    console.log('headers', headers)
     const messages = opt.messages ?? []
     if (systemPrompt)
         messages.push(systemPrompt)
     messages.push({ role: 'user', content })
 
-    return fetch(openAiUrl(model,port), {
+    const url = openAiUrl(model,port)
+    console.log(`POST ${url}`)
+    return fetch(url, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -137,7 +149,7 @@ export function useClient() {
         }))
     }
 
-    return { auth, get, send, fail, openAi, openAiDefaults, sleep }
+    return { auth, get, send, fail, openAi, openAiDefaults, openAiFromModel, sleep }
 }
 
 export function useLogging() {
@@ -175,8 +187,8 @@ export function loadEnv() {
         const value = rightPart(trimmed,'=')
         if (key && value) {
             process.env[key] = value
-            if (key === 'ModelProviders') {
-                ModelProviders = queryString(value)
+            if (key === 'MODEL_PROVIDERS') {
+                ModelProviders = queryString('?' + value)
                 console.log('ModelProviders', ModelProviders)
             }
         }

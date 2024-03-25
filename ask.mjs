@@ -34,7 +34,7 @@ logDebug(`=== REQUEST ${id} ===`)
 logDebug(`${id}, ${path}, ${body}`)
 logDebug(`=== END REQUEST ${id} ===\n\n`)
 
-const { openAi, openAiDefaults } = useClient()
+const { openAi, openAiDefaults, openAiFromModel } = useClient()
 const { systemPrompt, temperature, maxTokens } = openAiDefaults()
 
 let r = null
@@ -51,10 +51,16 @@ let endTime = performance.now()
 let elapsed_ms = parseInt(endTime - startTime)
 
 logDebug(`=== RESPONSE ${id} in ${elapsed_ms}ms ===\n`)
-const res = await r.json()
+const txt = await r.text()
+if (!r.ok) {
+    console.log(`${r.status} openAi request failed: ${txt}`)
+    process.exit()
+}
+const res = await JSON.parse(txt)
 const created = new Date(1710078197*1000).toISOString()
+res.model = openAiFromModel(res.model)
 res.request = {
-    id,    
+    id,
     created,
     messages: { systemPrompt },
     temperature,
