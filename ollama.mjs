@@ -3,7 +3,7 @@ import path from "path";
 
 const systemDefault = { "role":"system", "content":"You are a friendly AI Assistant that helps answer developer questions" }
 const temperatureDefault = 0.7
-const maxTokensDefault = -1
+const maxTokensDefault = 2048
 const baseUrlDefault = 'http://localhost'
 
 // Read the .env file
@@ -26,8 +26,7 @@ const providerUrlMapping = {
     "mistral": { "url": "https://api.mistral.ai"}
 };
 
-function askOllama(system, user, model,temperature, max_tokens, provider = 'ollama', port = null) {
-    if(!system) system = systemDefault
+function askOllama(messages, model,temperature, max_tokens, provider = 'ollama', port = null) {
     if(!temperature) temperature = temperatureDefault
     if(!max_tokens) max_tokens = maxTokensDefault
     let base_url = providerUrlMapping[provider].url
@@ -44,10 +43,7 @@ function askOllama(system, user, model,temperature, max_tokens, provider = 'olla
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
             },
             body: JSON.stringify({
-                messages: [
-                    {role: 'system', content: system},
-                    {role: 'user', content: user},
-                ],
+                messages: messages,
                 temperature,
                 model,
                 max_tokens,

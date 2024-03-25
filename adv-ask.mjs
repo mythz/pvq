@@ -27,7 +27,9 @@ const advancedQuestionMetaPrompt = processFile(metaTemplateFile, questionFile);
 // Call ollama to generate the advanced question prompt
 let r = null
 try {
-    r = await askOllama('You are a helpful AI assistant.',advancedQuestionMetaPrompt, model, 0.7, 1024, 'groq');
+    let messages= [{role: "system", content: "You are a helpful AI assistant."}]
+    messages.push({role: "user", content: advancedQuestionMetaPrompt + " Ensure you provide a complete and detailed answer, don't stop prematurely."})
+    r = await askOllama(messages, model, 0.7, 2048, 'groq');
 } catch (e) {
     console.error(e);
     process.exit(1);
@@ -46,7 +48,9 @@ console.log(`Advanced prompt generated and saved to ${advancedPromptFile}`);
 // Call ollama to generate the advanced question prompt
 let r2 = null
 try {
-    r2 = await askOllama('You are a helpful AI assistant.',advPrompt, model, 0.7, 1024,'groq');
+    let messages= [{role: "system", content: "You are a helpful AI assistant."}]
+    messages.push({role: "user", content: advPrompt})
+    r2 = await askOllama(messages, model, 0.7, 4096,'groq');
 } catch (e) {
     console.error(e);
     process.exit(1);
@@ -59,7 +63,6 @@ const advancedResponseFile = path.join(dir,`${path.parse(questionFile).name}.adv
 fs.writeFileSync(advancedResponseFile, JSON.stringify({ answer: advResponse }, null, 4));
 
 console.log(`Advanced response generated and saved to ${advancedResponseFile}`);
-
 
 
 

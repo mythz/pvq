@@ -23,7 +23,9 @@ const commentPrompt = processFile(commentTemplateFile, questionFile);
 
 let r = null
 try {
-    r = await askOllama('You are a helpful AI assistant.',commentPrompt, model, 0.7, 1024, 'groq');
+    let messages= [{role: "system", content: "You are a helpful AI assistant."}]
+    messages.push({role: "user", content: commentPrompt})
+    r = await askOllama(messages, model, 0.7, 1024, 'groq');
 } catch (e) {
     console.error(e);
     process.exit(1);
