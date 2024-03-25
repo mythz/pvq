@@ -116,10 +116,3 @@ function lastLeftPart(s, needle) {
         ? s
         : s.substring(0, pos)
 }
-function lastRightPart(s, needle) {
-    if (s == null) return null
-    let pos = s.lastIndexOf(needle)
-    return pos == -1
-        ? s
-        : s.substring(pos + needle.length)
-}
