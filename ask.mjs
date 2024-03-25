@@ -57,14 +57,14 @@ logDebug(`=== REQUEST ${id} ===`)
 logDebug(`${id}, ${path}, ${obj.Body}`)
 logDebug(`=== END REQUEST ${id} ===\n\n`)
 
-const system = { "role":"system", "content":"You are a friendly AI Assistant that helps answer developer questions" }
+const system = { "role":"system", "content":"You are a friendly AI Assistant that helps answer developer questions. Think step by step and assist the user with their question, ensuring that your answer is relevant, on topic and provides actionable advice with code examples as appropriate." }
 const temperature = 0.7
 const max_tokens = 2048
 
 let r = null
 let startTime = performance.now()
 try {
-    const content = obj.Title + "\n\n" + obj.Body
+    const content = "Title: " + obj.Title + "\nTags:" + obj.Tags.join(',') + "\n\n" + obj.Body
     r = await fetch(`http://localhost:${port}/v1/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
