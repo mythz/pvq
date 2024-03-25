@@ -7,6 +7,8 @@ import { execSync } from "child_process"
 const dir = process.argv[2]
 let model = process.argv[3]
 let port = process.argv[4] ?? '11434'
+let fileCount = isNaN(process.argv[5]) ? 0 : parseInt(process.argv[5])
+
 if (!model) throw "model required"
 
 if (!dir || !fs.existsSync(dir)) {
@@ -14,7 +16,6 @@ if (!dir || !fs.existsSync(dir)) {
     process.exit()
 }
 
-let fileCount = 0
 function processDir(dir) {
     const nodes = fs.readdirSync(dir)
     const files = nodes.filter(x => x.endsWith('.json'))

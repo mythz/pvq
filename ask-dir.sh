@@ -1,6 +1,8 @@
 #!/bin/bash
 
-while ! ./ask-dir.mjs questions $1 $2
+countStart=$(find questions -name "*.a.$1.json" | wc -l)
+
+while ! ./ask-dir.mjs questions $1 $2 11434 $countStart
 do
   sleep 1
   echo "Restarting program..."

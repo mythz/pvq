@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import fs from "fs"
+import { useClient, useLogging, idParts, lastLeftPart } from "./lib.mjs"
 
 let path = process.argv[2]
 let model = process.argv[3]
@@ -12,15 +13,8 @@ if (!fs.existsSync(path)) {
     if (isNaN(id)) {
         console.log('not valid number:', process.argv[2])
         process.exit()
-    }
-    
-    const idStr = `${id}`.padStart(9, '0')
-    
-    const dir1 = idStr.substring(0,3)
-    const dir2 = idStr.substring(3,6)
-    const file = idStr.substring(6) + '.json'
-    path = `questions/${dir1}/${dir2}/${file}`
-
+    }    
+    path = idParts(id).questionPath
     if (!fs.existsSync(path)) {
         console.log(`file does not exist: ${path}`)
         process.exit()
@@ -34,56 +28,24 @@ const title = obj.Title ?? obj.title
 const body = obj.Body ?? obj.body
 const tags = obj.Tags ?? obj.tags ?? []
 
-
-let infoStream = null
-function logInfo(message) {
-    infoStream ??= fs.createWriteStream("info.log", {flags:'a'})
-    console.info(message)
-    infoStream.write(message + "\n")
-}
-
-let debugStream = null
-function logDebug(message) {
-    debugStream ??= fs.createWriteStream("debug.log", {flags:'a'})
-    console.log(message)
-    debugStream.write(message + "\n")
-}
-
-let errorStream = null
-function logError(message) {
-    errorStream ??= fs.createWriteStream("error.log", {flags:'a'})
-    console.error(message)
-    errorStream.write(message + "\n")
-}
+const { logInfo, logDebug, logError } = useLogging()
 
 logDebug(`=== REQUEST ${id} ===`)
 logDebug(`${id}, ${path}, ${body}`)
 logDebug(`=== END REQUEST ${id} ===\n\n`)
 
-const system = { "role":"system", "content":"You are a friendly AI Assistant that helps answer developer questions. Think step by step and assist the user with their question, ensuring that your answer is relevant, on topic and provides actionable advice with code examples as appropriate." }
-const temperature = 0.7
-const max_tokens = 2048
+const { openAi, openAiDefaults } = useClient()
+const { systemPrompt, temperature, maxTokens } = openAiDefaults()
 
 let r = null
 let startTime = performance.now()
 try {
     const content = "Title: " + title + "\n\nTags:" + tags.join(',') + "\n\n" + body
-    r = await fetch(`http://localhost:${port}/v1/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            messages: [
-                system,
-                { role:"user", content },
-            ],
-            temperature,
-            model,
-            max_tokens,
-            stream: false,
-        })
-    })
+    
+    r = await openAi({ content, model, port, systemPrompt })
 } catch (e) {
-    logError(`Failed`)
+    logError(`Failed:`, e)
+    process.exit()
 }
 let endTime = performance.now()
 let elapsed_ms = parseInt(endTime - startTime)
@@ -94,9 +56,9 @@ const created = new Date(1710078197*1000).toISOString()
 res.request = {
     id,    
     created,
-    messages: { system },
+    messages: { systemPrompt },
     temperature,
-    max_tokens,
+    max_tokens: maxTokens,
     elapsed_ms,
 }
 
@@ -111,11 +73,3 @@ if (content) {
     fs.writeFileSync(lastLeftPart(path,'.') + `.e.${safeModel}.json`, JSON.stringify(res, undefined, 2), 'UTF-8')
 }
 logDebug(`\n=== END RESPONSE ${id} in ${elapsed_ms}ms ===\n\n`)
-
-function lastLeftPart(s, needle) {
-    if (s == null) return null
-    let pos = s.lastIndexOf(needle)
-    return pos == -1
-        ? s
-        : s.substring(0, pos)
-}

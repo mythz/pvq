@@ -2,6 +2,69 @@ import fs from "fs"
 import path from "path"
 
 const BASE_URL = `https://pvq.app`
+const SYSTEM_PROMPT = { "role":"system", "content":"You are a friendly AI Assistant that helps answer developer questions. Think step by step and assist the user with their question, ensuring that your answer is relevant, on topic and provides actionable advice with code examples as appropriate." }
+const ModelProviders = {}
+
+export function openAiDefaults() {
+    return {
+        temperature: 0.7,
+        systemPrompt: SYSTEM_PROMPT,
+        maxTokens: 2048,
+    }
+}
+
+export function openAiUrl(model,port) {
+    let provider = ModelProviders[model]
+    return provider === 'groq'
+        ? `https://api.groq.com/openai`
+        : provider === 'openai'
+            ? `https://api.openai.com`
+            : `http://localhost:${port ?? '11434'}/v1/chat/completions`
+}
+
+export function openAiModel(model) {
+    let provider = ModelProviders[model]
+    if (provider === 'groq') {
+        const mapping = {
+            mixtral: `mixtral-8x7b-32768`,
+            gemma: `gemma-7b-it`
+        }
+        return mapping[model] ?? model
+    }
+    return model
+}
+
+function openAi(opt) {
+    opt = opt ?? {}
+    const { content, model, port } = opt
+    if (!content) throw new Error('content requred')
+    if (!model) throw new Error('model requred')
+    const defaults = openAiDefaults()
+    const temperature = opt.temperature ?? defaults.temperature
+    const systemPrompt = opt.systemPrompt ?? defaults.systemPrompt
+    const max_tokens = opt.maxTokens ?? defaults.maxTokens
+    const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+    }
+    const messages = opt.messages ?? []
+    if (systemPrompt)
+        messages.push(systemPrompt)
+    messages.push({ role: 'user', content })
+
+    return fetch(openAiUrl(model,port), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            messages,
+            temperature,
+            model:openAiModel(model),
+            max_tokens,
+            stream: false,
+        })
+    })
+}
 
 export function useClient() {
     loadEnv()
@@ -74,22 +137,61 @@ export function useClient() {
         }))
     }
 
-    return { auth, get, send, fail, sleep }
+    return { auth, get, send, fail, openAi, openAiDefaults, sleep }
+}
+
+export function useLogging() {
+
+    let infoStream = null
+    function logInfo(message) {
+        infoStream ??= fs.createWriteStream("info.log", {flags:'a'})
+        console.info(message)
+        infoStream.write(message + "\n")
+    }
+    
+    let debugStream = null
+    function logDebug(message) {
+        debugStream ??= fs.createWriteStream("debug.log", {flags:'a'})
+        console.log(message)
+        debugStream.write(message + "\n")
+    }
+    
+    let errorStream = null
+    function logError(message) {
+        errorStream ??= fs.createWriteStream("error.log", {flags:'a'})
+        console.error(message)
+        errorStream.write(message + "\n")
+    }
+    
+    return { logInfo, logDebug, logError }
 }
 
 export function loadEnv() {
-    // Read the .env file
-    const envFile = path.join('./', '.env');
-    const envData = fs.readFileSync(envFile, { encoding: 'utf-8' });
-
-    // Parse the environment variables
-    const envLines = envData.split('\n');
+    const envData = fs.readFileSync(`./.env`, { encoding: 'utf-8' })
+    const envLines = envData.split('\n')
     for (const line of envLines) {
-        const [key, value] = line.trim().split('=');
+        const trimmed = line.trim()
+        const key = leftPart(trimmed,'=')
+        const value = rightPart(trimmed,'=')
         if (key && value) {
-            process.env[key] = value;
+            process.env[key] = value
+            if (key === 'ModelProviders') {
+                ModelProviders = queryString(value)
+                console.log('ModelProviders', ModelProviders)
+            }
         }
     }
+}
+
+export function idParts(id) {
+    const idStr = `${id}`.padStart(9, '0')
+    const dir1 = idStr.substring(0,3)
+    const dir2 = idStr.substring(3,6)
+    const fileId = idStr.substring(6)
+    const file = fileId + '.json'
+    const questionDir = `./questions/${dir1}/${dir2}`
+    const questionPath = `${questionDir}/${file}`
+    return { dir1, dir2, fileId, file, questionDir, questionPath }
 }
 
 export function sleep(ms) {
@@ -136,13 +238,40 @@ export function splitOnFirst(s, c) {
     let pos = s.indexOf(c)
     return pos >= 0 ? [s.substring(0, pos), s.substring(pos + 1)] : [s]
 }
-
+export function splitOnLast(s, c) {
+    if (!s) return [s]
+    let pos = s.lastIndexOf(c)
+    return pos >= 0
+        ? [s.substring(0, pos), s.substring(pos + 1)]
+        : [s]
+}
+export function leftPart(s, needle) {
+    if (s == null) return null
+    let pos = s.indexOf(needle)
+    return pos == -1
+        ? s
+        : s.substring(0, pos)
+}
+export function rightPart(s, needle) {
+    if (s == null) return null
+    let pos = s.indexOf(needle)
+    return pos == -1
+        ? s
+        : s.substring(pos + needle.length)
+}
 export function lastLeftPart(s, needle) {
     if (s == null) return null
     let pos = s.lastIndexOf(needle)
     return pos == -1
         ? s
         : s.substring(0, pos)
+}
+export function lastRightPart(s, needle) {
+    if (s == null) return null
+    let pos = s.lastIndexOf(needle)
+    return pos == -1
+        ? s
+        : s.substring(pos + needle.length)
 }
 
 export function tryDecode(s) {
@@ -151,4 +280,17 @@ export function tryDecode(s) {
     } catch(e) {
         return s
     }
+}
+
+export function queryString(url) {
+    if (!url || url.indexOf('?') === -1) return {}
+    let pairs = rightPart(url, '?').split('&')
+    let map = {}
+    for (let i = 0; i < pairs.length; ++i) {
+        let p = pairs[i].split('=')
+        map[p[0]] = p.length > 1
+            ? decodeURIComponent(p[1].replace(/\+/g, ' '))
+            : null
+    }
+    return map
 }
