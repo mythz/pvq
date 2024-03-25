@@ -19,6 +19,9 @@ create table main.post
     Slug             TEXT,
     Summary          TEXT,
     RankDate         TEXT,
-    AnswerCount      INTEGER
+    AnswerCount      INTEGER,
+    CreatedBy        TEXT,
+    ModifiedBy       TEXT,
+    RefId            TEXT
 );
 
