@@ -167,7 +167,7 @@ const safeModel = model.replace(/:/g,'-')
 if (responseContent) {
     logInfo(`id:${id}, created:${created}, model:${model}, temperature:${temperature}, elapsed_ms:${elapsed_ms}, choices:${res.choices.length}, size:${responseContent.length}`)
     // Extract the JSON object from the response, it will be among the response as a whole, but towards the end
-    const voteString = responseContent.match(/\{(?:[^{}]|(?R))*}/)
+    const voteString = responseContent.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/)
     // Ensure that voteString has a match, and is valid JSON
     if (voteString == null || voteString.length === 0) {
         logError(`ERROR ${id}: missing response`)
