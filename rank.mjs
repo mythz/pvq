@@ -85,6 +85,7 @@ logDebug('=== END ANSWER FILES ===\n\n')
 
 let r = null
 let startTime = performance.now()
+let content = null;
 try {
     let answers = allAnswerFiles.sort(() => Math.random() - 0.5).map(file => {
         // Check if `.h.` is in the file name, if so, it's a human answer
@@ -107,7 +108,7 @@ try {
     // Map answer `model` from answers to letter, eg A, B, C, D, E
     const answerMap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').slice(0, answers.length)
 
-    let content = `Below I have a user question and a set of different answers. I want you to distribute up to a sum total of 10 votes between the answers based on the quality in relation to the original user question. Original User Question: ${question.Title}\n\n${question.Body}\n\nCritique the below answers to justify your distribution of votes, providing a brief explanation for each before returning the simple JSON object showing your voting results. Make sure you write out your explanation for your vote distribution first.\n\nAnswers:\n${answers.map((answer, index) => `Answer ${answerMap[index]}:\n${answers[index].content}`).join('\n\n')}\n\nEnd of Answers\n\nNow review and distribute your votes between the answers above. Think step by step as to why each answer is good or bad, you don't have to use all 10 votes if the answer quality or relevance is not of a decent quality. Vote 0 if the answer is not relevant or of low quality, and vote 1-10 if the answer is relevant, based on quality.`
+    content = `Below I have a user question and a set of different answers. I want you to distribute up to a sum total of 10 votes between the answers based on the quality in relation to the original user question. Original User Question: ${question.Title}\n\n${question.Body}\n\nCritique the below answers to justify your distribution of votes, providing a brief explanation for each before returning the simple JSON object showing your voting results. Make sure you write out your explanation for your vote distribution first.\n\nAnswers:\n${answers.map((answer, index) => `Answer ${answerMap[index]}:\n${answers[index].content}`).join('\n\n')}\n\nEnd of Answers\n\nNow review and distribute your votes between the answers above. Think step by step as to why each answer is good or bad, you don't have to use all 10 votes if the answer quality or relevance is not of a decent quality. Vote 0 if the answer is not relevant or of low quality, and vote 1-10 if the answer is relevant, based on quality.`
     content += `\n\n Lastly, return the votes in the following format: \`{"A": 3, "B": 0 "C": 2, "D": 5, "E": 0}\` etc. , eg in a single JSON object. Do not distribute more than 10 votes.
     
     Note: This question has been tagged with the following tags: ${question.Tags.join(', ')}. This information is important to consider when voting since it will likely include the specific language or framework being used and/or requested.
@@ -122,14 +123,14 @@ try {
     })
 
     logDebug(`=== REQUEST ${id} ===`)
-    logDebug(`${id}, ${questionPath}, ${content}`)
+    logDebug(`${id}, ${questionPath}`)
     logDebug(`=== END REQUEST ${id} ===\n\n`)
 
     r = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}`,
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
             'Accept': 'application/json'
         },
         body: JSON.stringify({
@@ -155,18 +156,18 @@ const created = new Date().toISOString()
 res.request = {
     id,
     created,
-    messages: { system },
+    messages: [system,{ role:"user", "content": content }],
     temperature,
     max_tokens,
     elapsed_ms,
 }
 
-const content = res?.choices?.length > 0 && res.choices[0].message?.content
+const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
 const safeModel = model.replace(/:/g,'-')
-if (content) {
-    logInfo(`id:${id}, created:${created}, model:${model}, temperature:${temperature}, elapsed_ms:${elapsed_ms}, choices:${res.choices.length}, size:${content.length}`)
+if (responseContent) {
+    logInfo(`id:${id}, created:${created}, model:${model}, temperature:${temperature}, elapsed_ms:${elapsed_ms}, choices:${res.choices.length}, size:${responseContent.length}`)
     // Extract the JSON object from the response, it will be among the response as a whole, but towards the end
-    const voteString = content.match(/\{.*}/)
+    const voteString = responseContent.match(/\{.*}/)
     // Ensure that voteString has a match, and is valid JSON
     if (voteString == null || voteString.length === 0) {
         logError(`ERROR ${id}: missing response`)
@@ -195,6 +196,7 @@ if (content) {
         content: content,
         response: res,
         modelVotes: voteJson,
+        modelMap: modelMap
     }
     fs.writeFileSync(lastLeftPart(questionPath,'.') + `.validation.${safeModel}.json`, JSON.stringify(validation, undefined,2), 'UTF-8')
 } else {
@@ -202,6 +204,9 @@ if (content) {
     fs.writeFileSync(lastLeftPart(questionPath,'.') + `.e.${safeModel}.json`, JSON.stringify(res, undefined, 2), 'UTF-8')
 }
 logDebug(`\n=== END RESPONSE ${id} ===\n\n`)
+
+// Sleep for 2 seconds to avoid rate limiting
+await new Promise(resolve => setTimeout(resolve, 2000))
 
 function lastLeftPart(s, needle) {
     if (s == null) return null

@@ -30,7 +30,7 @@ function processDir(dir) {
         const id = file.split('.')[0]
         const votesFile = path.join(dir,`${id}.v.${safeModel}.json`)
         if (fs.existsSync(votesFile)) {
-            console.log(`skipping: ${file}`)
+            //console.log(`skipping: ${file}`)
             return
         }
         console.log(`${fileCount++}: ./rank.mjs ${path.join(dir,file)} ${model} ${port}`)
