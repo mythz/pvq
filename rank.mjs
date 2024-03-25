@@ -108,7 +108,7 @@ try {
     // Map answer `model` from answers to letter, eg A, B, C, D, E
     const answerMap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').slice(0, answers.length)
 
-    content = `Below I have a user question and a set of different answers. I want you to distribute up to a sum total of 10 votes between the answers based on the quality in relation to the original user question. Original User Question: ${question.Title}\n\n${question.Body}\n\nCritique the below answers to justify your distribution of votes, providing a brief explanation for each before returning the simple JSON object showing your voting results. Make sure you write out your explanation for your vote distribution first.\n\nAnswers:\n${answers.map((answer, index) => `Answer ${answerMap[index]}:\n${answers[index].content}`).join('\n\n')}\n\nEnd of Answers\n\nNow review and distribute your votes between the answers above. Think step by step as to why each answer is good or bad, you don't have to use all 10 votes if the answer quality or relevance is not of a decent quality. Vote 0 if the answer is not relevant or of low quality, and vote 1-10 if the answer is relevant, based on quality.`
+    content = `Below I have a user question and a set of different answers. I want you to give a score out of 10 to each of the answers based on the quality in relation to the original user question. Original User Question: ${question.Title}\n\n${question.Body}\n\nCritique the below answers to justify your scores, providing a brief explanation for each before returning the simple JSON object showing your score results for each answer. Make sure you write out your explanation for your vote distribution first.\n\nAnswers:\n${answers.map((answer, index) => `Answer ${answerMap[index]}:\n${answers[index].content}`).join('\n\n')}\n\nEnd of Answers\n\nNow review and score the answers above out of 10, where 10 is a high quality, correct answer with good explanations, examples etc, without being too verbose. Think step by step as to why each answer is good or bad. Vote 0 if the answer is not relevant or of low quality, and vote 1-10 if the answer is relevant, based on quality.`
     content += `\n\n Lastly, return the votes in the following format: \`{"A": 3, "B": 0 "C": 2, "D": 5, "E": 0}\` etc. , eg in a single JSON object. Do not distribute more than 10 votes.
     
     Note: This question has been tagged with the following tags: ${question.Tags.join(', ')}. This information is important to consider when voting since it will likely include the specific language or framework being used and/or requested.
@@ -167,7 +167,7 @@ const safeModel = model.replace(/:/g,'-')
 if (responseContent) {
     logInfo(`id:${id}, created:${created}, model:${model}, temperature:${temperature}, elapsed_ms:${elapsed_ms}, choices:${res.choices.length}, size:${responseContent.length}`)
     // Extract the JSON object from the response, it will be among the response as a whole, but towards the end
-    const voteString = responseContent.match(/\{.*}/)
+    const voteString = responseContent.match(/\{(?:[^{}]|(?R))*}/)
     // Ensure that voteString has a match, and is valid JSON
     if (voteString == null || voteString.length === 0) {
         logError(`ERROR ${id}: missing response`)
