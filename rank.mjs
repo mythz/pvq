@@ -206,7 +206,7 @@ if (responseContent) {
 logDebug(`\n=== END RESPONSE ${id} ===\n\n`)
 
 // Sleep for 2 seconds to avoid rate limiting
-await new Promise(resolve => setTimeout(resolve, 2000))
+await new Promise(resolve => setTimeout(resolve, 5000))
 
 function lastLeftPart(s, needle) {
     if (s == null) return null
