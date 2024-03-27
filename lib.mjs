@@ -1,7 +1,7 @@
 import fs from "fs"
 import path from "path"
 
-const BASE_URL = `https://pvq.app`
+let BASE_URL = `https://pvq.app`
 const SYSTEM_PROMPT = { "role":"system", "content":"You are a friendly AI Assistant that helps answer developer questions. Think step by step and assist the user with their question, ensuring that your answer is relevant, on topic and provides actionable advice with code examples as appropriate." }
 let ModelProviders = {}
 
@@ -183,6 +183,8 @@ export function loadEnv() {
     const envLines = envData.split('\n')
     for (const line of envLines) {
         const trimmed = line.trim()
+        if (trimmed.startsWith('#')) continue
+        
         const key = leftPart(trimmed,'=')
         const value = rightPart(trimmed,'=')
         if (key && value) {
@@ -190,6 +192,9 @@ export function loadEnv() {
             if (key === 'MODEL_PROVIDERS') {
                 ModelProviders = queryString('?' + value)
                 console.log('ModelProviders', ModelProviders)
+            } else if (key === 'PVQ_BASE_URL') {
+                process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0
+                BASE_URL = value
             }
         }
     }
