@@ -163,6 +163,13 @@ res.request = {
 }
 
 const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
+if(res.error != null) {
+    logError(`ERROR ${id}: ${JSON.stringify(res.error)}`)
+    if(res.error.code === 'rate_limit_exceeded') {
+        // Wait 30 seconds before continuing, will pick up this job again in the next pass
+        await new Promise(resolve => setTimeout(resolve, 30000))
+    }
+}
 const safeModel = model.replace(/:/g,'-')
 if (responseContent) {
     logInfo(`id:${id}, created:${created}, model:${model}, temperature:${temperature}, elapsed_ms:${elapsed_ms}, choices:${res.choices.length}, size:${responseContent.length}`)
@@ -205,7 +212,7 @@ if (responseContent) {
 }
 logDebug(`\n=== END RESPONSE ${id} ===\n\n`)
 
-// Sleep for 2 seconds to avoid rate limiting
+// Sleep for 5 seconds to avoid rate limiting by default
 await new Promise(resolve => setTimeout(resolve, 5000))
 
 function lastLeftPart(s, needle) {
