@@ -9,6 +9,13 @@ var isDebug =  Debugger.IsAttached;
 var basePath = isDebug ? "../../../../questions" : "../questions";
 var baseDataPath = isDebug ? "../../../../data" : "../data";
 
+System.Text.Json.JsonSerializerOptions SystemJsonOptions = new(TextConfig.SystemJsonOptions)
+{
+    WriteIndented = true
+};
+
+string ToJson<T>(T obj) => System.Text.Json.JsonSerializer.Serialize(obj, SystemJsonOptions);
+
 if (File.Exists($"{basePath}/app.db".MapProjectPath())) File.Delete($"{basePath}/app.db".MapProjectPath());
 File.Copy($"{baseDataPath}/filtered.db".MapProjectPath(), $"{basePath}/app.db".MapProjectPath());
 
@@ -87,21 +94,21 @@ foreach(var post in allPosts)
     var path = post.Id.ToString("000000000");
     var dir = Path.Combine($"{basePath}", path.Substring(0,3), path.Substring(3,3));
     Directory.CreateDirectory(dir);
-    var json = JsonSerializer.SerializeToString(post);
+    var json = ToJson(post);
     File.WriteAllText(Path.Combine(dir, path.Substring(6,3) + ".json"), json);
     
     //Write the accepted answer if it exists
     if (acceptedAnswerMap.TryGetValue(post.Id, out var acceptedAnswer))
     {
         var acceptedAnswerPath = Path.Combine(dir, path.Substring(6,3) + ".h.accepted.json");
-        File.WriteAllText(acceptedAnswerPath, JsonSerializer.SerializeToString(acceptedAnswer));
+        File.WriteAllText(acceptedAnswerPath, ToJson(acceptedAnswer));
     }
     
     //Write the highest scoring answer if it exists
     if (highestScoreAnswerMap.TryGetValue(post.Id, out var highestScoreAnswer))
     {
         var highestScoreAnswerPath = Path.Combine(dir, path.Substring(6,3) + ".h.most-voted.json");
-        File.WriteAllText(highestScoreAnswerPath, JsonSerializer.SerializeToString(highestScoreAnswer));
+        File.WriteAllText(highestScoreAnswerPath, ToJson(highestScoreAnswer));
     }
     
     writtenCount++;

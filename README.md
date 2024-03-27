@@ -31,10 +31,10 @@ DR
 - [ ] Ranking of answers
 - [ ] Test generation of comments for good context for highest rate answers
 - [ ] Store answer ranking etc in `???.meta.json`
-- [ ] Add string? `CreatedBy`, `ModifiedBy` and `RefId` Column to Post
+- [x] Add string? `CreatedBy`, `ModifiedBy` and `RefId` Column to Post
 - [ ] Rename stackoverflow-shootout bucket to pvq
-- [ ] Create pvq-build bucket, move all /sql, app.db + other non-data to it
-- [ ] Meta prompt for enhancing answers
+- [x] Create pvq-build bucket, move all /sql, app.db + other non-data to it
+- [x] Meta prompt for enhancing answers
 - [ ] Scripts to populate ModelVotes in DB
 - [ ] Scripts to calculate Leaderboard Page
 - [ ] Leaderboard Page and Blog Post
