@@ -3,7 +3,7 @@
 import fs from "fs"
 import path from "path"
 import { execSync } from "child_process"
-import { useClient, sleep } from "./lib.mjs"
+import { useClient, sleep, formatTime } from "./lib.mjs"
 
 let models = process.argv[2]
 let worker = process.argv[3]
@@ -15,12 +15,15 @@ if (await auth()) {
     let failed = 0
     let processed = 0
     let i = 0
+    let startedAt = new Date()
     
     console.log(`Handling models '${models}' as worker '${worker}'`)
     
     while (true) {
         try {
-            console.log(`${i++} waiting for next job...         (processed:${processed}, failed:${failed})`)
+            const elapsed = new Date() - startedAt
+            const uptime = formatTime(elapsed)
+            console.log(`[uptime:${uptime} processed:${processed} failed:${failed}] ${i++} waiting for next job...`)
             const resJob = await get(`/api/GetNextJobs?models=${models}&worker=${worker}`)
             const txtJob = await resJob.text()
             if (!resJob.ok) {

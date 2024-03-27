@@ -1,7 +1,7 @@
 import fs from "fs"
 import path from "path"
 
-const BASE_URL = `https://pvq.app`
+let BASE_URL = `https://pvq.app`
 const SYSTEM_PROMPT = { "role":"system", "content":"You are a friendly AI Assistant that helps answer developer questions. Think step by step and assist the user with their question, ensuring that your answer is relevant, on topic and provides actionable advice with code examples as appropriate." }
 let ModelProviders = {}
 
@@ -183,6 +183,8 @@ export function loadEnv() {
     const envLines = envData.split('\n')
     for (const line of envLines) {
         const trimmed = line.trim()
+        if (trimmed.startsWith('#')) continue
+
         const key = leftPart(trimmed,'=')
         const value = rightPart(trimmed,'=')
         if (key && value) {
@@ -190,6 +192,9 @@ export function loadEnv() {
             if (key === 'MODEL_PROVIDERS') {
                 ModelProviders = queryString('?' + value)
                 console.log('ModelProviders', ModelProviders)
+            } else if (key === 'PVQ_BASE_URL') {
+                process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0
+                BASE_URL = value
             }
         }
     }
@@ -305,4 +310,23 @@ export function queryString(url) {
             : null
     }
     return map
+}
+
+const pad2 = n => `${n}`.padStart(2,'0')
+export function formatTime(ms) {
+    const totalSecs = Math.floor(ms/1000)
+    const totalMins = Math.floor(totalSecs/60)
+    const totalHours = Math.floor(totalMins/60)
+    const totalDays = Math.floor(totalHours/24)
+    const secs = totalSecs % 60
+    const mins = totalMins % 60
+    const hours = totalHours % 24
+
+    let fmt = `${pad2(hours)}:${pad2(mins)}:${pad2(secs)}`
+
+    if (totalDays > 0) {
+        const s = totalDays != 1 ? 's' : ''
+        fmt = `${totalDays} day${s} ` + fmt
+    }
+    return fmt
 }
