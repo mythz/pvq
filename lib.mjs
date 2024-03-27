@@ -184,7 +184,7 @@ export function loadEnv() {
     for (const line of envLines) {
         const trimmed = line.trim()
         if (trimmed.startsWith('#')) continue
-        
+
         const key = leftPart(trimmed,'=')
         const value = rightPart(trimmed,'=')
         if (key && value) {
@@ -310,4 +310,23 @@ export function queryString(url) {
             : null
     }
     return map
+}
+
+const pad2 = n => `${n}`.padStart(2,'0')
+export function formatTime(ms) {
+    const totalSecs = Math.floor(ms/1000)
+    const totalMins = Math.floor(totalSecs/60)
+    const totalHours = Math.floor(totalMins/60)
+    const totalDays = Math.floor(totalHours/24)
+    const secs = totalSecs % 60
+    const mins = totalMins % 60
+    const hours = totalHours % 24
+
+    let fmt = `${pad2(hours)}:${pad2(mins)}:${pad2(secs)}`
+
+    if (totalDays > 0) {
+        const s = totalDays != 1 ? 's' : ''
+        fmt = `${totalDays} day${s} ` + fmt
+    }
+    return fmt
 }
