@@ -82,6 +82,8 @@ foreach(var post in allPosts)
 // Update all posts
 db.UpdateAll(allPosts);
 
+if(args.Contains("--skip-files")) return;
+
 //Write files to ./questions/???/???/???.json where path is the padded nine 0s of the Id
 Console.WriteLine("Writing Posts to files...");
 var writtenCount = 0;

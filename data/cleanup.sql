@@ -1,5 +1,5 @@
 -- Drop the 'Body' column from the 'posts' table
-ALTER TABLE post DROP COLUMN Body;
+Update main.post set Body = null;
 
 -- Vacuum the database to reclaim unused space
 VACUUM;
