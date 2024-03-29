@@ -6,9 +6,8 @@ DB_FILE="./data/filtered.db"
 
 # If DB_FILE exists, return an error
 if [ -f "$DB_FILE" ]; then
-    echo "Error: The database file $DB_FILE already exists."
-    echo "Please remove the existing database file before running this script."
-    exit 1
+    echo "The database file $DB_FILE already exists, deleting it..."
+    rm "$DB_FILE"
 fi
 
 echo "Starting database creation process..."

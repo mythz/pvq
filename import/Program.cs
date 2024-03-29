@@ -33,17 +33,27 @@ var allAcceptedAnswerIds = allPosts.ConvertAll(x => x.AcceptedAnswerId)
 Console.WriteLine("Selecting Posts from Original DB...");
 using var origDb = dbFactoryOriginal.Open();
 // origDb.Select<Post>(q => Sql.In(q.Id, allPostIds)); produces a SQL error, build the query manually
-var acceptedAnswerSql = $"select * from posts where id in ({string.Join(",", allAcceptedAnswerIds)})";
-var acceptedAnswers = origDb.Select<Post>(acceptedAnswerSql);
 
-// Create a map of accepted answers to question posts
-var acceptedAnswerMap = acceptedAnswers.ToDictionary(x => x.ParentId, x => x);
+var serializedHighestScoreAnswersMapExists = File.Exists(Path.Join(baseDataPath, "highest-score-answers.json"));
+Dictionary<int?, Post> highestScoreAnswerMap;
+List<Post>? highestScoreAnswers;
+if(serializedHighestScoreAnswersMapExists)
+{
+    Console.WriteLine("Reading Highest voted answers from Original DB...");
+    var highestScoreAnswersJson = await File.ReadAllTextAsync(Path.Join(baseDataPath, "highest-score-answers.json"));
+    highestScoreAnswers = highestScoreAnswersJson.FromJson<List<Post>>();
+    highestScoreAnswerMap = highestScoreAnswers.ToDictionary(x => x.ParentId, x => x);
+}
+else
+{
+    Console.WriteLine("Selecting Highest voted answers from Original DB...");
+    // Create a map of highest scoring answers to question posts, using HAVING MAX(score) to group by parentid
+    var highestScoreAnswerSql = $"select * from posts where parentid in ({string.Join(",", allPostIds)}) and posttypeid = 2 group by parentid having max(score)";
+    highestScoreAnswers = origDb.Select<Post>(highestScoreAnswerSql);
+    highestScoreAnswerMap = highestScoreAnswers.ToDictionary(x => x.ParentId, x => x);
 
-Console.WriteLine("Selecting Highest voted answers from Original DB...");
-// Create a map of highest scoring answers to question posts, using HAVING MAX(score) to group by parentid
-var highestScoreAnswerSql = $"select * from posts where parentid in ({string.Join(",", allPostIds)}) and posttypeid = 2 group by parentid having max(score)";
-var highestScoreAnswers = origDb.Select<Post>(highestScoreAnswerSql);
-var highestScoreAnswerMap = highestScoreAnswers.ToDictionary(x => x.ParentId, x => x);
+    await File.WriteAllTextAsync(Path.Join(baseDataPath, "highest-score-answers.json"), highestScoreAnswers.ToJson());
+}
 
 Console.WriteLine($"Fetched {allPosts.Count} Posts");
 int processedCount = 0;
@@ -65,7 +75,7 @@ foreach(var post in allPosts)
 
         var allFiles = Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories);
         var allAnswerFilesCount = allFiles.Count(x => x.Contains($"{filePrefix}.a."));
-        allAnswerFilesCount += highestScoreAnswerMap.Count(x => x.Key == post.Id);
+        allAnswerFilesCount += highestScoreAnswerMap.ContainsKey(post.Id) ? 1 : 0;
         post.Summary = summary;
         post.Slug = slug;
         post.AnswerCount = allAnswerFilesCount;
@@ -83,6 +93,12 @@ foreach(var post in allPosts)
 db.UpdateAll(allPosts);
 
 if(args.Contains("--skip-files")) return;
+
+var acceptedAnswerSql = $"select * from posts where id in ({string.Join(",", allAcceptedAnswerIds)})";
+var acceptedAnswers = origDb.Select<Post>(acceptedAnswerSql);
+
+// Create a map of accepted answers to question posts
+var acceptedAnswerMap = acceptedAnswers.ToDictionary(x => x.ParentId, x => x);
 
 //Write files to ./questions/???/???/???.json where path is the padded nine 0s of the Id
 Console.WriteLine("Writing Posts to files...");
