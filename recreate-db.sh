@@ -45,4 +45,10 @@ echo "Running cleanup.sql..."
 sqlite3 "./questions/app.db" < ./data/cleanup.sql
 echo "Cleanup script executed successfully."
 
+# Run the `meta` script
+echo "Running meta import script..."
+cd meta
+dotnet run --project meta.csproj
+cd ..
+
 echo "Database creation process completed."
