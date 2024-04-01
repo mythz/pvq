@@ -20,7 +20,9 @@ export function openAiUrl(model,port) {
         ? `https://api.groq.com/openai${apiPath}`
         : provider === 'openai'
             ? `https://api.openai.com${apiPath}`
-            : `http://localhost:${port ?? '11434'}${apiPath}`
+            : provider === 'anthropic'
+                ? `https://api.anthropic.com/v1/messages`
+                : `http://localhost:${port ?? '11434'}${apiPath}`
 }
 
 export function openAiApiKey(model) {
@@ -38,18 +40,36 @@ export function openAiApiKey(model) {
 
 export function openAiFromModel(model) {
     const mapping = {
-        'mixtral-8x7b-32768': 'mixtral',
-        'gemma-7b-it': 'gemma',
+        'mixtral-8x7b-32768':       'mixtral',
+        'gemma-7b-it':              'gemma',
+        'gpt-4-turbo-preview':      'gpt-4-turbo',
+        'gpt-4-0125-preview':       'gpt-4-turbo',
+        'claude-3-haiku-20240307':  'claude-3-haiku',
+        'claude-3-sonnet-20240229': 'claude-3-sonnet',
+        'claude-3-opus-20240229':   'claude-3-opus',
     }
     return mapping[model] ?? model
 }
 
 export function openAiModel(model) {
     let provider = ModelProviders[model]
+    // console.log('provider', provider, model, ModelProviders)
     if (provider === 'groq') {
         const mapping = {
             mixtral: `mixtral-8x7b-32768`,
             gemma: `gemma-7b-it`
+        }
+        return mapping[model] ?? model
+    } else if (provider === 'openai') {
+        const mapping = {
+            'gpt-4-turbo': 'gpt-4-turbo-preview',
+        }
+        return mapping[model] ?? model
+    } else if (provider === 'anthropic') {
+        const mapping = {
+            'claude-3-haiku':  'claude-3-haiku-20240307',
+            'claude-3-sonnet': 'claude-3-sonnet-20240229',
+            'claude-3-opus':   'claude-3-opus-20240229',
         }
         return mapping[model] ?? model
     }
@@ -58,10 +78,10 @@ export function openAiModel(model) {
 
 export function openAiResponse(txt, model) {
     const res = JSON.parse(txt)
+    const created = new Date().valueOf()
 
     let provider = ModelProviders[model]
     if (provider === 'google') {
-        const created = new Date(1710078197*1000).toISOString()
         const content = res.candidates[0].content.parts[0].text
         res.candidates[0].content.parts[0].text = '${choices[0].message.content}'
 
@@ -77,10 +97,22 @@ export function openAiResponse(txt, model) {
             },
             finish_reason: 'stop'
         }]
-        return res
-    } else {
-        return res
+    } else if (provider === 'anthropic') {
+        const content = res.content[0].text
+        res.content[0].text = '${choices[0].message.content}'
+        res.id = `chatcmpl-${created}`
+        res.object = 'chat.completion'
+        res.created = created
+        res.choices = [{
+            index: 0, 
+            message: {
+                role: 'assistant',
+                content,
+            },
+            finish_reason: 'stop'
+        }]
     }
+    return res
 }
 
 function openAi(opt) {
@@ -99,9 +131,6 @@ function openAi(opt) {
     const apiKey = openAiApiKey(model)
     // console.log('headers', headers)
     const messages = opt.messages ?? []
-    if (systemPrompt)
-        messages.push(systemPrompt)
-    messages.push({ role: 'user', content })
 
     let provider = ModelProviders[model]
     if (provider === 'google') {
@@ -128,11 +157,38 @@ function openAi(opt) {
                 }
             })
         })
+    } else if (provider === 'anthropic') {
+        if (apiKey) {
+            headers['x-api-key'] = apiKey
+        }
+        headers['anthropic-version'] = '2023-06-01'
+
+        messages.push({ role: 'user', content })
+
+        const body = {
+            messages,
+            temperature,
+            model:openAiModel(model),
+            max_tokens,
+        }
+        if (systemPrompt) {
+            body.system = systemPrompt.content
+        }
+
+        const url = openAiUrl(model,port)
+        console.log(`POST ${url}`)
+        return fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body)
+        })
     } else {
         if (apiKey) {
             headers['Authorization'] = `Bearer ${apiKey}`
         }
-    
+        if (systemPrompt) messages.push(systemPrompt)
+        messages.push({ role: 'user', content })
+
         const url = openAiUrl(model,port)
         console.log(`POST ${url}`)
         return fetch(url, {
