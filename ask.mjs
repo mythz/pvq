@@ -34,7 +34,7 @@ logDebug(`=== REQUEST ${id} ===`)
 logDebug(`${id}, ${path}, ${body}`)
 logDebug(`=== END REQUEST ${id} ===\n\n`)
 
-const { openAi, openAiDefaults, openAiFromModel } = useClient()
+const { openAi, openAiDefaults, openAiFromModel, openAiResponse } = useClient()
 const { systemPrompt, temperature, maxTokens } = openAiDefaults()
 
 let r = null
@@ -43,6 +43,10 @@ try {
     const content = "Title: " + title + "\n\nTags:" + tags.join(',') + "\n\n" + body
     
     r = await openAi({ content, model, port, systemPrompt })
+    // if (r) {
+    //     console.log(`openAi response: ${r.status} ${r.statusText}`)
+    //     console.log(r.headers)
+    // }
 } catch (e) {
     logError(`Failed:`, e)
     process.exit()
@@ -56,8 +60,8 @@ if (!r.ok) {
     console.log(`${r.status} openAi request failed: ${txt}`)
     process.exit()
 }
-const res = await JSON.parse(txt)
-const created = new Date(1710078197*1000).toISOString()
+const res = openAiResponse(txt, model)
+const created = new Date(new Date()*1000).toISOString()
 res.model = openAiFromModel(res.model)
 res.request = {
     id,
@@ -75,7 +79,7 @@ if (content) {
     logDebug(content)
     fs.writeFileSync(lastLeftPart(path,'.') + `.a.${safeModel}.json`, JSON.stringify(res, undefined, 2), 'UTF-8')
 } else {
-    logError(`ERROR ${id}: missing response`)
+    logError(`ERROR ${id}: missing response:\n${JSON.stringify(res, undefined, 2)}`)
     fs.writeFileSync(lastLeftPart(path,'.') + `.e.${safeModel}.json`, JSON.stringify(res, undefined, 2), 'UTF-8')
 }
 logDebug(`\n=== END RESPONSE ${id} in ${elapsed_ms}ms ===\n\n`)
