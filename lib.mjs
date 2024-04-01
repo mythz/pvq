@@ -23,6 +23,19 @@ export function openAiUrl(model,port) {
             : `http://localhost:${port ?? '11434'}${apiPath}`
 }
 
+export function openAiApiKey(model) {
+    let provider = ModelProviders[model]
+    return provider === 'groq'
+        ? process.env.GROQ_API_KEY
+        : provider === 'openai'
+            ? process.env.OPENAI_API_KEY
+            : provider === 'google'
+                ? process.env.GOOGLE_API_KEY
+                : provider === 'anthropic'
+                    ? process.env.ANTHROPIC_API_KEY
+                    : null
+}
+
 export function openAiFromModel(model) {
     const mapping = {
         'mixtral-8x7b-32768': 'mixtral',
@@ -43,6 +56,33 @@ export function openAiModel(model) {
     return model
 }
 
+export function openAiResponse(txt, model) {
+    const res = JSON.parse(txt)
+
+    let provider = ModelProviders[model]
+    if (provider === 'google') {
+        const created = new Date(1710078197*1000).toISOString()
+        const content = res.candidates[0].content.parts[0].text
+        res.candidates[0].content.parts[0].text = '${choices[0].message.content}'
+
+        res.id = `chatcmpl-${created}`
+        res.object = 'chat.completion'
+        res.created = created
+        res.model = model
+        res.choices = [{
+            index: 0, 
+            message: {
+                role: 'assistant',
+                content,
+            },
+            finish_reason: 'stop'
+        }]
+        return res
+    } else {
+        return res
+    }
+}
+
 function openAi(opt) {
     opt = opt ?? {}
     const { content, model, port } = opt
@@ -51,31 +91,62 @@ function openAi(opt) {
     const defaults = openAiDefaults()
     const temperature = opt.temperature ?? defaults.temperature
     const systemPrompt = opt.systemPrompt ?? defaults.systemPrompt
-    const max_tokens = opt.maxTokens ?? defaults.maxTokens
+    const max_tokens = opt.maxTokens ?? defaults.maxTokens    
     const headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
     }
-    console.log('headers', headers)
+    const apiKey = openAiApiKey(model)
+    // console.log('headers', headers)
     const messages = opt.messages ?? []
     if (systemPrompt)
         messages.push(systemPrompt)
     messages.push({ role: 'user', content })
 
-    const url = openAiUrl(model,port)
-    console.log(`POST ${url}`)
-    return fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-            messages,
-            temperature,
-            model:openAiModel(model),
-            max_tokens,
-            stream: false,
+    let provider = ModelProviders[model]
+    if (provider === 'google') {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`
+        console.log(`POST ${lastLeftPart(url,'?')}`)
+        return fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                "contents": [{
+                  "parts":[
+                        {"text": content}
+                    ]
+                }],
+                safetySettings: [
+                    {
+                        category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                        threshold: "BLOCK_ONLY_HIGH"
+                    }
+                ],
+                generationConfig: {
+                    temperature: temperature,
+                    maxOutputTokens: max_tokens,
+                }
+            })
         })
-    })
+    } else {
+        if (apiKey) {
+            headers['Authorization'] = `Bearer ${apiKey}`
+        }
+    
+        const url = openAiUrl(model,port)
+        console.log(`POST ${url}`)
+        return fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                messages,
+                temperature,
+                model:openAiModel(model),
+                max_tokens,
+                stream: false,
+            })
+        })
+    }
 }
 
 export function useClient() {
@@ -104,6 +175,11 @@ export function useClient() {
         } else {
             console.log(`Authenticated as '${userName}'`)
             updateCookies(res)
+
+            if (Object.keys(ModelProviders).length > 0) {
+                console.log('ModelProviders:',ModelProviders)
+            }
+
             return true
         }
     }
@@ -149,7 +225,7 @@ export function useClient() {
         }))
     }
 
-    return { auth, get, send, fail, openAi, openAiDefaults, openAiFromModel, sleep }
+    return { auth, get, send, fail, openAi, openAiDefaults, openAiFromModel, openAiResponse, sleep }
 }
 
 export function useLogging() {
@@ -191,7 +267,7 @@ export function loadEnv() {
             process.env[key] = value
             if (key === 'MODEL_PROVIDERS') {
                 ModelProviders = queryString('?' + value)
-                console.log('ModelProviders', ModelProviders)
+                // console.log('ModelProviders', ModelProviders)
             } else if (key === 'PVQ_BASE_URL') {
                 process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0
                 BASE_URL = value
