@@ -136,6 +136,7 @@ function openAi(opt) {
     const apiKey = openAiApiKey(model)
     // console.log('headers', headers)
     const messages = opt.messages ?? []
+    const signal = AbortSignal.timeout(120 * 1000) //120secs
 
     let provider = ModelProviders[model]
     if (provider === 'google') {
@@ -160,7 +161,8 @@ function openAi(opt) {
                     temperature: temperature,
                     maxOutputTokens: max_tokens,
                 }
-            })
+            }),  
+            signal,
         })
     } else if (provider === 'anthropic') {
         if (apiKey) {
@@ -185,7 +187,8 @@ function openAi(opt) {
         return fetch(url, {
             method: 'POST',
             headers,
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),  
+            signal,
         })
     } else {
         if (apiKey) {
@@ -205,7 +208,8 @@ function openAi(opt) {
                 model:openAiModel(model),
                 max_tokens,
                 stream: false,
-            })
+            }),  
+            signal,
         })
     }
 }
