@@ -78,7 +78,7 @@ export function openAiModel(model) {
 
 export function openAiResponse(txt, model) {
     const res = JSON.parse(txt)
-    const created = new Date().valueOf()
+    const created = Math.floor(new Date().getTime() / 1000)
 
     let provider = ModelProviders[model]
     if (provider === 'google') {
