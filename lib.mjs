@@ -82,21 +82,26 @@ export function openAiResponse(txt, model) {
 
     let provider = ModelProviders[model]
     if (provider === 'google') {
-        const content = res.candidates[0].content.parts[0].text
-        res.candidates[0].content.parts[0].text = '${choices[0].message.content}'
+        try {
+            const content = res.candidates[0].content.parts[0].text
+            res.candidates[0].content.parts[0].text = '${choices[0].message.content}'
 
-        res.id = `chatcmpl-${created}`
-        res.object = 'chat.completion'
-        res.created = created
-        res.model = model
-        res.choices = [{
-            index: 0, 
-            message: {
-                role: 'assistant',
-                content,
-            },
-            finish_reason: 'stop'
-        }]
+            res.id = `chatcmpl-${created}`
+            res.object = 'chat.completion'
+            res.created = created
+            res.model = model
+            res.choices = [{
+                index: 0, 
+                message: {
+                    role: 'assistant',
+                    content,
+                },
+                finish_reason: 'stop'
+            }]
+        } catch(e) {
+            console.log('google response error', e, res)
+            throw e
+        }
     } else if (provider === 'anthropic') {
         const content = res.content[0].text
         res.content[0].text = '${choices[0].message.content}'
