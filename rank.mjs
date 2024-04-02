@@ -101,8 +101,9 @@ let elapsed_ms = parseInt(endTime - startTime)
 
 logDebug(`=== RESPONSE ${id} in ${elapsed_ms}ms ===\n`)
 
-const res = await r.json()
+const resJson = await r.text()
 const created = new Date().toISOString()
+const res = openAiResponse(resJson, model)
 res.request = {
     id,
     created,
