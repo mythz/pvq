@@ -18,6 +18,7 @@ if (!dir || !fs.existsSync(dir)) {
 
 function processDir(dir) {
     const nodes = fs.readdirSync(dir)
+    nodes.sort().reverse()
     const files = nodes.filter(x => x.endsWith('.json'))
     const subDirs = nodes.filter(x => !x.includes('.'))
     

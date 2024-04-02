@@ -60,7 +60,14 @@ if (!r.ok) {
     console.log(`${r.status} openAi request failed: ${txt}`)
     process.exit()
 }
+
 const res = openAiResponse(txt, model)
+if (!res) {
+    logError(`ERROR ${id}: missing response:\n${txt}`)
+    fs.writeFileSync(lastLeftPart(path,'.') + `.e.${openAiFromModel(model).replace(/:/g,'-')}.json`, txt, 'UTF-8')
+    process.exit()
+}
+
 const created = new Date().toISOString()
 res.model = openAiFromModel(res.model)
 res.request = {
@@ -72,7 +79,7 @@ res.request = {
     elapsed_ms,
 }
 
-const content = res?.choices?.length > 0 && res.choices[0].message?.content
+const content = res.choices?.[0]?.message?.content
 const safeModel = model.replace(/:/g,'-')
 if (content) {
     logInfo(`id:${id}, created:${created}, model:${model}, temperature:${temperature}, elapsed_ms:${elapsed_ms}, choices:${res.choices.length}, size:${content.length}`)

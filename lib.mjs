@@ -32,7 +32,7 @@ export function openAiApiKey(model) {
         : provider === 'openai'
             ? process.env.OPENAI_API_KEY
             : provider === 'google'
-                ? process.env.GOOGLE_API_KEY
+                ? new Date().valueOf() % 2 == 0 ? process.env.GOOGLE_API_KEY : (process.env.GOOGLE_API_KEY2 || process.env.GOOGLE_API_KEY)
                 : provider === 'anthropic'
                     ? process.env.ANTHROPIC_API_KEY
                     : null
@@ -83,8 +83,14 @@ export function openAiResponse(txt, model) {
     let provider = ModelProviders[model]
     if (provider === 'google') {
         try {
-            const content = res.candidates[0].content.parts[0].text
+            const content = res.candidates?.[0]?.content?.parts?.[0]?.text
+            if (!content) {
+                console.log('google missing response: ')
+                console.log(txt)
+                return null
+            }
             res.candidates[0].content.parts[0].text = '${choices[0].message.content}'
+            const finish_reason = res.candidates[0].finishReason || 'stop'
 
             res.id = `chatcmpl-${created}`
             res.object = 'chat.completion'
@@ -96,7 +102,7 @@ export function openAiResponse(txt, model) {
                     role: 'assistant',
                     content,
                 },
-                finish_reason: 'stop'
+                finish_reason,
             }]
         } catch(e) {
             console.log('google response error', e, res)
@@ -120,7 +126,7 @@ export function openAiResponse(txt, model) {
     return res
 }
 
-function openAi(opt) {
+async function openAi(opt) {
     opt = opt ?? {}
     const { content, model, port } = opt
     if (!content) throw new Error('content requred')
@@ -136,13 +142,12 @@ function openAi(opt) {
     const apiKey = openAiApiKey(model)
     // console.log('headers', headers)
     const messages = opt.messages ?? []
-    const signal = AbortSignal.timeout(120 * 1000) //120secs
 
     let provider = ModelProviders[model]
     if (provider === 'google') {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`
         console.log(`POST ${lastLeftPart(url,'?')}`)
-        return fetch(url, {
+        return await fetch(url, {
             method: 'POST',
             headers,
             body: JSON.stringify({
@@ -155,14 +160,26 @@ function openAi(opt) {
                     {
                         category: "HARM_CATEGORY_DANGEROUS_CONTENT",
                         threshold: "BLOCK_ONLY_HIGH"
-                    }
+                    },
+                    {
+                        category: "HARM_CATEGORY_HATE_SPEECH",
+                        threshold: "BLOCK_ONLY_HIGH"
+                    },
+                    {
+                        category: "HARM_CATEGORY_HARASSMENT",
+                        threshold: "BLOCK_ONLY_HIGH"
+                    },
+                    {
+                        category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                        threshold: "BLOCK_ONLY_HIGH"
+                    },
                 ],
                 generationConfig: {
                     temperature: temperature,
                     maxOutputTokens: max_tokens,
                 }
-            }),  
-            signal,
+            }),
+            signal: AbortSignal.timeout(60 * 1000),
         })
     } else if (provider === 'anthropic') {
         if (apiKey) {
@@ -184,11 +201,11 @@ function openAi(opt) {
 
         const url = openAiUrl(model,port)
         console.log(`POST ${url}`)
-        return fetch(url, {
+        return await fetch(url, {
             method: 'POST',
             headers,
-            body: JSON.stringify(body),  
-            signal,
+            body: JSON.stringify(body),
+            signal: AbortSignal.timeout(60 * 1000),
         })
     } else {
         if (apiKey) {
@@ -199,7 +216,7 @@ function openAi(opt) {
 
         const url = openAiUrl(model,port)
         console.log(`POST ${url}`)
-        return fetch(url, {
+        return await fetch(url, {
             method: 'POST',
             headers,
             body: JSON.stringify({
@@ -208,8 +225,8 @@ function openAi(opt) {
                 model:openAiModel(model),
                 max_tokens,
                 stream: false,
-            }),  
-            signal,
+            }),
+            signal: AbortSignal.timeout(60 * 1000),
         })
     }
 }
