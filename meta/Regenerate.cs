@@ -154,6 +154,9 @@ public class StatTotals
     // post.Score || Meta.ModelVotes[PostId] (Model Ranking Score)
     public int StartingUpVotes { get; set; }
 
+    [Index]
+    public string? CreatedBy { get; set; }
+
     public int GetScore() => StartingUpVotes + UpVotes - DownVotes;
 
     private sealed class StatTotalsEqualityComparer : IEqualityComparer<StatTotals>

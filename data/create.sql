@@ -25,5 +25,7 @@ create table main.post
     RefId            TEXT,
     LockedDate       TEXT,
     LockedReason     TEXT,
-    ModifiedReason   TEXT
+    ModifiedReason   TEXT,
+    DeletedBy        TEXT,
+    DeletedDate      TEXT
 );

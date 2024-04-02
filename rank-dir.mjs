@@ -28,7 +28,7 @@ function processDir(dir) {
         // If the votes result file doesn't already exist, process, otherwise skip
         // Get Id from file name
         const id = file.split('.')[0]
-        const votesFile = path.join(dir,`${id}.v.${safeModel}.json`)
+        const votesFile = path.join(dir,`${id}.v.json`)
         if (fs.existsSync(votesFile)) {
             //console.log(`skipping: ${file}`)
             return
