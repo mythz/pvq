@@ -61,7 +61,7 @@ if (!r.ok) {
     process.exit()
 }
 const res = openAiResponse(txt, model)
-const created = new Date(new Date()*1000).toISOString()
+const created = new Date().toISOString()
 res.model = openAiFromModel(res.model)
 res.request = {
     id,
