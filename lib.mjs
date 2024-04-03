@@ -13,34 +13,43 @@ export function openAiDefaults() {
     }
 }
 
+const ProviderApis = {
+    'groq':      apiPath => `https://api.groq.com/openai${apiPath}`,
+    'mistral':   apiPath => `https://api.mistral.ai${apiPath}`,
+    'openai':    apiPath => `https://api.openai.com${apiPath}`,
+    'anthropic': apiPath => `https://api.anthropic.com/v1/messages`,
+    'google':    apiPath => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+}
+
 export function openAiUrl(model,port) {
     let provider = ModelProviders[model]
     const apiPath = '/v1/chat/completions'
-    return provider === 'groq'
-        ? `https://api.groq.com/openai${apiPath}`
-        : provider === 'openai'
-            ? `https://api.openai.com${apiPath}`
-            : provider === 'anthropic'
-                ? `https://api.anthropic.com/v1/messages`
-                : `http://localhost:${port ?? '11434'}${apiPath}`
+    const fn = ProviderApis[provider]
+    if (fn) {
+        return fn(apiPath)
+    }
+    return `http://localhost:${port ?? '11434'}${apiPath}`
 }
 
 export function openAiApiKey(model) {
     let provider = ModelProviders[model]
     return provider === 'groq'
         ? process.env.GROQ_API_KEY
-        : provider === 'openai'
-            ? process.env.OPENAI_API_KEY
-            : provider === 'google'
-                ? new Date().valueOf() % 2 == 0 ? process.env.GOOGLE_API_KEY : (process.env.GOOGLE_API_KEY2 || process.env.GOOGLE_API_KEY)
-                : provider === 'anthropic'
-                    ? process.env.ANTHROPIC_API_KEY
-                    : null
+        : provider === 'mistral'
+            ? process.env.MISTRAL_API_KEY
+            : provider === 'openai'
+                ? process.env.OPENAI_API_KEY
+                : provider === 'google'
+                    ? new Date().valueOf() % 2 == 0 ? process.env.GOOGLE_API_KEY : (process.env.GOOGLE_API_KEY2 || process.env.GOOGLE_API_KEY)
+                    : provider === 'anthropic'
+                        ? process.env.ANTHROPIC_API_KEY
+                        : null
 }
 
 export function openAiFromModel(model) {
     const mapping = {
         'mixtral-8x7b-32768':       'mixtral',
+        'open-mixtral-8x7b':        'mixtral',
         'gemma-7b-it':              'gemma',
         'gpt-4-turbo-preview':      'gpt-4-turbo',
         'gpt-4-0125-preview':       'gpt-4-turbo',
@@ -58,6 +67,11 @@ export function openAiModel(model) {
         const mapping = {
             mixtral: `mixtral-8x7b-32768`,
             gemma: `gemma-7b-it`
+        }
+        return mapping[model] ?? model
+    } else if (provider === 'mistral') {
+        const mapping = {
+            'mixtral': 'open-mixtral-8x7b',
         }
         return mapping[model] ?? model
     } else if (provider === 'openai') {
@@ -179,7 +193,7 @@ async function openAi(opt) {
                     maxOutputTokens: max_tokens,
                 }
             }),
-            signal: AbortSignal.timeout(60 * 1000),
+            // signal: AbortSignal.timeout(60 * 1000), // Doesn't work
         })
     } else if (provider === 'anthropic') {
         if (apiKey) {
@@ -205,7 +219,7 @@ async function openAi(opt) {
             method: 'POST',
             headers,
             body: JSON.stringify(body),
-            signal: AbortSignal.timeout(60 * 1000),
+            // signal: AbortSignal.timeout(60 * 1000),
         })
     } else {
         if (apiKey) {
@@ -226,7 +240,7 @@ async function openAi(opt) {
                 max_tokens,
                 stream: false,
             }),
-            signal: AbortSignal.timeout(60 * 1000),
+            // signal: AbortSignal.timeout(60 * 1000),
         })
     }
 }
