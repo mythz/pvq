@@ -92,6 +92,7 @@ try {
     
     Given my review, I would score Answer A: 6, Answer B: 9, and Answer C: 3.
     
+    Here is the JSON object of my scores:
     { "A": 6, "B": 9, "C": 3 }
     
     END OF EXAMPLE
