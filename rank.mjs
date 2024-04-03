@@ -39,7 +39,8 @@ function readHumanAnswerFile(file) {
 }
 
 const { openAi, openAiDefaults } = useClient()
-const { temperature, maxTokens } = openAiDefaults()
+const { maxTokens } = openAiDefaults()
+const temperature = 0.1
 
 let systemPrompt = { "role":"system", "content":"You are an AI assistant that votes on the quality and relevance of answers to a given question. Before giving votes, give an critique of each answer based on quality and relevance." }
 
