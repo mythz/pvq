@@ -117,7 +117,9 @@ try {
     - Good examples
     - Addresses the question
     - Examples of code or pseudocode in the same language as the question`
-    content += `\n\n Lastly, return the votes in the following format: \`{"A": 3, "B": 0 "C": 2, "D": 5, "E": 0}\` etc. , eg in a single JSON object.
+    content += `
+    
+    At the end of your response, return all your votes in a single JSON object in the following format: \`{"A": 3, "B": 0 "C": 2, "D": 5, "E": 0}\` etc. , eg in a single JSON object. Do not use JSON elsewhere in your response.
 
     Now you have all your instructions, provide your critique for each answer first, and only then return your votes in the JSON format.
     `
