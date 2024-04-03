@@ -28,7 +28,7 @@ export function openAiUrl(model,port) {
     if (fn) {
         return fn(apiPath)
     }
-    return `http://localhost:${port ?? '11434'}${apiPath}`
+    return (process.env.OLLAMA_URL == null ? `http://localhost:${port ?? '11434'}` : `${process.env.OLLAMA_URL}`) + `${apiPath}`
 }
 
 export function openAiApiKey(model) {

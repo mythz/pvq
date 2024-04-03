@@ -21,8 +21,9 @@ function processDir(dir) {
     const subDirs = nodes.filter(x => !x.includes('.'))
 
     const safeModel = model.replace(/:/g,'-')
+    const voteIds = files.filter(x => x.endsWith(`.v.json`)).map(x => x.split('.')[0])
     const questionLength = '000.json'.length
-    const candidates = files.filter(x => x.length == questionLength && x.endsWith('.json'))
+    const candidates = files.filter(x => x.length == questionLength && x.endsWith('.json') && !voteIds.includes(x.split('.')[0]))
 
     candidates.forEach(file => {
         // If the votes result file doesn't already exist, process, otherwise skip
@@ -30,7 +31,7 @@ function processDir(dir) {
         const id = file.split('.')[0]
         const votesFile = path.join(dir,`${id}.v.json`)
         if (fs.existsSync(votesFile)) {
-            //console.log(`skipping: ${file}`)
+            console.log(`skipping: ${file}`)
             return
         }
         console.log(`${fileCount++}: ./rank.mjs ${path.join(dir,file)} ${model} ${port}`)
