@@ -28,8 +28,12 @@ function processDir(dir) {
     
     candidates.forEach(file => {
         console.log(`${fileCount++}: ./ask.mjs ${path.join(dir,file)} ${model}`)
-        const r = execSync(`./ask.mjs ${path.join(dir,file)} ${model} ${port}`).toString()
-        console.log(r)
+        try {
+            const r = execSync(`./ask.mjs ${path.join(dir,file)} ${model} ${port}`, { timeout: 60*1000 }).toString()
+            console.log(r)
+        } catch(e) {
+            console.log('ERROR execSync:', e)
+        }
     })
     subDirs.forEach(subDir => processDir(path.join(dir,subDir)))
 }
