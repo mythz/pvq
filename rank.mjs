@@ -197,7 +197,12 @@ if (responseContent) {
     let result = {
         modelVotes: voteMap
     }
-    fs.writeFileSync(lastLeftPart(questionPath, '.') + `.v.json`, JSON.stringify(result, undefined, 2), 'UTF-8')
+
+    logDebug('\n=== VOTES ===')
+    const votesJson = JSON.stringify(result, undefined, 2)
+    fs.writeFileSync(lastLeftPart(questionPath, '.') + `.v.json`, votesJson, 'UTF-8')
+    logDebug('=== END VOTES ===\n')
+
     let validation = {
         content: content,
         response: res,
@@ -209,6 +214,7 @@ if (responseContent) {
     logError(`ERROR ${id}: missing response`)
     fs.writeFileSync(lastLeftPart(questionPath, '.') + `.e.${safeModel}.json`, JSON.stringify(res, undefined, 2), 'UTF-8')
 }
-logDebug(`\n=== END RESPONSE ${id} ===\n\n`)
+
+logDebug(`\n=== END RESPONSE ${id} in ${parseInt(performance.now() - startTime)}ms ===\n\n`)
 process.exit()
 //await new Promise(resolve => setTimeout(resolve, 5000))
