@@ -194,14 +194,25 @@ if (responseContent) {
     for (let key in voteJson) {
         voteMap[modelMap[key]] = voteJson[key]
     }
+
+    const modelVotes = {}
+    const sortedKeys = Object.keys(voteMap).sort()
+    sortedKeys.forEach(key => modelVotes[key] = voteMap[key])  
+
     let result = {
-        modelVotes: voteMap
+        modelVotes
     }
-    fs.writeFileSync(lastLeftPart(questionPath, '.') + `.v.json`, JSON.stringify(result, undefined, 2), 'UTF-8')
+
+    logDebug('\n=== VOTES ===')
+    const votesJson = JSON.stringify(result, undefined, 2)
+    logDebug(votesJson)
+    fs.writeFileSync(lastLeftPart(questionPath, '.') + `.v.json`, votesJson, 'UTF-8')
+    logDebug('=== END VOTES ===\n')
+
     let validation = {
         content: content,
         response: res,
-        modelVotes: voteJson,
+        modelVotes,
         modelMap: modelMap
     }
     fs.writeFileSync(lastLeftPart(questionPath, '.') + `.validation.${safeModel}.json`, JSON.stringify(validation, undefined, 2), 'UTF-8')
@@ -209,6 +220,7 @@ if (responseContent) {
     logError(`ERROR ${id}: missing response`)
     fs.writeFileSync(lastLeftPart(questionPath, '.') + `.e.${safeModel}.json`, JSON.stringify(res, undefined, 2), 'UTF-8')
 }
-logDebug(`\n=== END RESPONSE ${id} ===\n\n`)
+
+logDebug(`\n=== END RESPONSE ${id} in ${parseInt(performance.now() - startTime)}ms ===\n\n`)
 process.exit()
 //await new Promise(resolve => setTimeout(resolve, 5000))
