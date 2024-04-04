@@ -61,7 +61,7 @@ async function handleQuestionJob(txtQuestion, id, model, failed, jobId, processe
 
 async function handleRanking(id, failed, jobId, txtQuestion, processed) {
     // rank question answers
-    const allAnswers = await get(`/api/GetAllAnswers?id=${id}`)
+    const allAnswers = await get(`/api/GetAllAnswerModels?id=${id}`)
     const jsonAnswers = await allAnswers.json()
     if (!allAnswers.ok) {
         failed++
@@ -78,7 +78,7 @@ async function handleRanking(id, failed, jobId, txtQuestion, processed) {
     const questionPath = `${questionsDir}/${questionFile}`
     console.log(`writing to ${questionPath}...`)
     fs.writeFileSync(`${questionPath}`, txtQuestion)
-    const answers = jsonAnswers.answers
+    const answers = jsonAnswers.results
     console.log(`answers: ${answers}`)
     for (let i = 0; i < answers.length; i++) {
         const answer = answers[i]
