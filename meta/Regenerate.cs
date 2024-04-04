@@ -94,7 +94,7 @@ public static class Regenerate
                 StartingUpVotes = post.Score,
                 UpVotes = 0,
                 DownVotes = 0,
-                CreatedBy = "import"
+                CreatedBy = null
             },
         };
         
@@ -109,7 +109,7 @@ public static class Regenerate
                 UpVotes = 0,
                 DownVotes = 0,
                 StartingUpVotes = (int)Math.Round(vote.Value,0),
-                CreatedBy = "import"
+                CreatedBy = vote.Key
             };
             liveStats.Add(answerStats);
         }
@@ -157,8 +157,10 @@ public class Vote
 public class StatTotals
 {
     // PostId (Question) or PostId-UserName (Answer)
+    [PrimaryKey]
     public required string Id { get; set; }
     
+    [Index]
     public int PostId { get; set; }
     
     public int FavoriteCount { get; set; }
@@ -176,6 +178,7 @@ public class StatTotals
     public int StartingUpVotes { get; set; }
 
     [Index]
+    [StringLength(128)]
     public string? CreatedBy { get; set; }
 
     public int GetScore() => StartingUpVotes + UpVotes - DownVotes;
