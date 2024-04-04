@@ -191,13 +191,16 @@ if (responseContent) {
         process.exit()
     }
     let voteMap = {}
-    let sortedKeys = Object.keys(voteJson)
-    sortedKeys.sort()
-    sortedKeys.forEach(key => {
+    for (let key in voteJson) {
         voteMap[modelMap[key]] = voteJson[key]
-    })
+    }
+
+    const modelVotes = {}
+    const sortedKeys = Object.keys(voteMap).sort()
+    sortedKeys.forEach(key => modelVotes[key] = voteMap[key])  
+
     let result = {
-        modelVotes: voteMap
+        modelVotes
     }
 
     logDebug('\n=== VOTES ===')
@@ -209,7 +212,7 @@ if (responseContent) {
     let validation = {
         content: content,
         response: res,
-        modelVotes: voteJson,
+        modelVotes,
         modelMap: modelMap
     }
     fs.writeFileSync(lastLeftPart(questionPath, '.') + `.validation.${safeModel}.json`, JSON.stringify(validation, undefined, 2), 'UTF-8')
