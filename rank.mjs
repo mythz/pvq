@@ -191,15 +191,18 @@ if (responseContent) {
         process.exit()
     }
     let voteMap = {}
-    for (let key in voteJson) {
+    let sortedKeys = Object.keys(voteJson)
+    sortedKeys.sort()
+    sortedKeys.forEach(key => {
         voteMap[modelMap[key]] = voteJson[key]
-    }
+    })
     let result = {
         modelVotes: voteMap
     }
 
     logDebug('\n=== VOTES ===')
     const votesJson = JSON.stringify(result, undefined, 2)
+    logDebug(votesJson)
     fs.writeFileSync(lastLeftPart(questionPath, '.') + `.v.json`, votesJson, 'UTF-8')
     logDebug('=== END VOTES ===\n')
 
