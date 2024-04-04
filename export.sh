@@ -1,1 +1,1 @@
-aws s3 sync questions s3://stackoverflow-shootout --endpoint-url https://b95f38ca3a6ac31ea582cd624e6eb385.r2.cloudflarestorage.com
+aws s3 sync questions s3://stackoverflow-shootout --size-only --endpoint-url https://b95f38ca3a6ac31ea582cd624e6eb385.r2.cloudflarestorage.com --exclude "*" --include "*.a.phi.json"
