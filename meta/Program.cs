@@ -52,6 +52,8 @@ foreach (var post in allPosts)
     }
 
     var meta = await postDirInfo.RegenerateMeta(post);
+    if(meta == null)
+        continue;
     allMeta.Add(meta);
 }
 

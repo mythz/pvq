@@ -1,4 +1,5 @@
 using System.Data;
+using System.Text.Json.Serialization;
 using ServiceStack;
 using ServiceStack.DataAnnotations;
 using ServiceStack.OrmLite;
@@ -19,7 +20,7 @@ public static class Regenerate
     static T FromJson<T>(this string json) => System.Text.Json.JsonSerializer.Deserialize<T>(json, SystemJsonOptions);
     
     
-    public static async Task<Meta> RegenerateMeta(this DirectoryInfo baseDir,Post post)
+    public static async Task<Meta?> RegenerateMeta(this DirectoryInfo baseDir,Post post)
     {
         var now = DateTime.Now;
         var path = post.Id.ToString("000000000");
@@ -64,9 +65,22 @@ public static class Regenerate
         
         // Read in the `.v.` (votes) file for this post
         var votesFile = Path.Join(baseDir.FullName, $"{filePrefix}.v.json");
-        var modelVotes = File.Exists(votesFile)
-            ? (await File.ReadAllTextAsync(votesFile)).FromJson<Vote>().ModelVotes
-            : new();
+        var modelVotesExists = File.Exists(votesFile);
+        var modelVote = new Vote { ModelVotes = new Dictionary<string, double>()};
+        try
+        {
+            if (modelVotesExists)
+            {
+                var votesJson = await File.ReadAllTextAsync(votesFile);
+                modelVote = votesJson.FromJson<Vote>();
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Error reading votes file {votesFile} : {e.Message} \nSkipping...");
+            return null;
+        } 
+            
 
         // Question
         var liveStats = new List<StatTotals>
@@ -80,21 +94,22 @@ public static class Regenerate
                 StartingUpVotes = post.Score,
                 UpVotes = 0,
                 DownVotes = 0,
+                CreatedBy = "import"
             },
         };
         
         
-        foreach (var vote in modelVotes)
+        foreach (var vote in modelVote.ModelVotes)
         {
             var answerId = postId + "-" + vote.Key;
-            var answerModel = vote.Key;
             var answerStats = new StatTotals
             {
                 Id = answerId,
                 PostId = post.Id,
                 UpVotes = 0,
                 DownVotes = 0,
-                StartingUpVotes = (int)Math.Round(vote.Value,0)
+                StartingUpVotes = (int)Math.Round(vote.Value,0),
+                CreatedBy = "import"
             };
             liveStats.Add(answerStats);
         }
@@ -110,6 +125,10 @@ public static class Regenerate
         return modelName;
     }
     
+    public static List<string> ModelUserNames { get; } = [
+        "phi", "gemma-2b", "qwen-4b", "codellama", "gemma", "deepseek-coder-6.7b", "mistral", "mixtral","gpt-4-turbo",
+        "claude-3-haiku","claude-3-sonnet","claude-3-opus"
+    ];
     public static Dictionary<string,int> ModelScores = new()
     {
         ["phi"] = 1, //2.7B
@@ -118,6 +137,8 @@ public static class Regenerate
         ["codellama"] = 4, //7B
         ["gemma"] = 5, //7B
         ["deepseek-coder:6.7b"] = 5, //6.7B
+        ["deepseek-coder:6"] = 5, //TODO Remove once data is clean, some 6.7b models are saved as 6 due to finding the first decimal
+        ["deepseek-coder:33b"] = 6, //33B
         ["mistral"] = 7, //7B
         ["mixtral"] = 8, //47B
         ["accepted"] = 9,
