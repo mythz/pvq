@@ -112,7 +112,7 @@ try {
     End of Answers
     ---
     
-    Now review and score the answers above out of 10. Here is your criteria:
+    Now review and score the answers above out of 10. Here is your criteria, be harsh but fair in your review, consider the following when scoring the answers:
     
     - Accurate information (this is the most important), ensure you think about the correctness of the information provided
     - Clear and concise explanation
@@ -121,10 +121,8 @@ try {
     - Examples of code or pseudocode in the same language as the question`
     content += `
     
-    At the end of your response, return all your votes in a single JSON object in the following format: \`{"A": 3, "B": 0 "C": 2, "D": 5, "E": 0}\` etc. , eg in a single JSON object. You must NOT use JSON anywhere else in your response, only to cast your final votes for all answers.
+    At the end of your response, return all your votes in a single JSON object in the following format: \`{"A": 3, "B": 0 "C": 2, "D": 5, "E": 0}\` etc. , eg in a single JSON object.
     You must include a critique and vote for every answer provided, missing votes will result in a failed review.
-
-    Now you have all your instructions, provide your critique for each answer first, and only then return your votes in the JSON format.
     `
 
     logDebug(`=== REQUEST ${id} ===`)
