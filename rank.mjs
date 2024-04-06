@@ -175,13 +175,15 @@ logDebug(safeModel)
 logDebug('=== END SAFE MODEL ===\n\n')
 if (responseContent) {
     logInfo(`id:${id}, created:${created}, model:${model}, temperature:${temperature}, elapsed_ms:${elapsed_ms}, choices:${res.choices.length}, size:${responseContent.length}`)
-    const voteString = responseContent.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*"A(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}(?=.{10,}|\s*$)/)
+    let voteString = responseContent.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/)
     if (voteString == null || voteString.length === 0) {
         logError(`ERROR ${id}: missing response`)
         fs.writeFileSync(lastLeftPart(questionPath, '.') + `.e.${safeModel}.json`, JSON.stringify(res, undefined, 2), 'UTF-8')
         process.exit()
     }
     let voteJson = null
+    // Sort matches by length and filter out entries that are less than 10 characters
+    voteString = voteString.sort((a, b) => b.length - a.length).filter(x => x.length > 10)
     try {
         voteJson = JSON.parse(voteString[0])
     } catch (e) {
