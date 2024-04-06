@@ -177,7 +177,7 @@ logDebug(safeModel)
 logDebug('=== END SAFE MODEL ===\n\n')
 if (responseContent) {
     logInfo(`id:${id}, created:${created}, model:${model}, temperature:${temperature}, elapsed_ms:${elapsed_ms}, choices:${res.choices.length}, size:${responseContent.length}`)
-    const voteString = responseContent.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*"A(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/)
+    const voteString = responseContent.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*"A(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}(?=.{10,}|\s*$)/)
     if (voteString == null || voteString.length === 0) {
         logError(`ERROR ${id}: missing response`)
         fs.writeFileSync(lastLeftPart(questionPath, '.') + `.e.${safeModel}.json`, JSON.stringify(res, undefined, 2), 'UTF-8')
