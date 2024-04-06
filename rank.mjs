@@ -38,8 +38,8 @@ function readHumanAnswerFile(file) {
     return answer.Id
 }
 
-const { openAi, openAiDefaults } = useClient()
-const { maxTokens } = openAiDefaults()
+const { openAi } = useClient()
+const maxTokens = 4096
 const temperature = 0.1
 
 let systemPrompt = { "role":"system", "content":"You are an AI assistant that votes on the quality and relevance of answers to a given question. Before giving votes, give an critique of each answer based on quality and relevance." }
@@ -121,7 +121,8 @@ try {
     - Examples of code or pseudocode in the same language as the question`
     content += `
     
-    At the end of your response, return all your votes in a single JSON object in the following format: \`{"A": 3, "B": 0 "C": 2, "D": 5, "E": 0}\` etc. , eg in a single JSON object. Do not use JSON elsewhere in your response.
+    At the end of your response, return all your votes in a single JSON object in the following format: \`{"A": 3, "B": 0 "C": 2, "D": 5, "E": 0}\` etc. , eg in a single JSON object. You must NOT use JSON anywhere else in your response, only to cast your final votes for all answers.
+    You must include a critique and vote for every answer provided, missing votes will result in a failed review.
 
     Now you have all your instructions, provide your critique for each answer first, and only then return your votes in the JSON format.
     `
