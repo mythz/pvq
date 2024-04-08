@@ -62,8 +62,10 @@ if [ -d "../pvq.app" ]; then
     echo "Migration completed."
 else
     echo "Running pvq Migration..."
-    cd ../MyApp/
-    cp ../pvq/questions/app.db ./App_Data/app.db
-    npm run migrate
+    cd ..
+    cp ./pvq/questions/app.db ./App_Data/app.db
+    export APP_ID=$(docker compose run --entrypoint "id -u" --rm app)
+    docker compose run --entrypoint "chown $APP_ID:$APP_ID /app/App_Data" --user root --rm app
+    docker compose up app-migration --exit-code-from app-migration
     echo "Migration completed."
 fi
