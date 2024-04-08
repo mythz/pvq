@@ -51,10 +51,18 @@ foreach (var post in allPosts)
         continue;
     }
 
-    var meta = await postDirInfo.RegenerateMeta(post);
-    if(meta == null)
-        continue;
-    allMeta.Add(meta);
+    try
+    {
+        var meta = await postDirInfo.RegenerateMeta(post);
+        if (meta == null)
+            continue;
+        allMeta.Add(meta);
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine($"Error processing post {post.Id}: {e.Message}");
+        Console.WriteLine("Skipping...");
+    }
 }
 
 var allStatTotals = allMeta.SelectMany(x => x.StatTotals).ToList();
