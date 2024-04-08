@@ -34,7 +34,7 @@ echo "Running import script..."
 sleep 1
 
 cd import
-dotnet run --project import.csproj $1
+dotnet run --project import.csproj --skip-files
 cd ..
 
 sleep 1
