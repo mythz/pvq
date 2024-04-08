@@ -53,10 +53,17 @@ cd ..
 
 echo "Database creation process completed."
 
-echo "Running pvq.app Migration..."
-
-cd ../pvq.app/MyApp/
-cp ../../pvq/questions/app.db ./App_Data/app.db
-npm run migrate
-
-echo "Migration completed."
+# Check if the ../pvq.app directory exists
+if [ -d "../pvq.app" ]; then
+    echo "Running pvq.app Migration..."
+    cd ../pvq.app/MyApp/
+    cp ../../pvq/questions/app.db ./App_Data/app.db
+    npm run migrate
+    echo "Migration completed."
+else
+    echo "Running pvq Migration..."
+    cd ../MyApp/
+    cp ../pvq/questions/app.db ./App_Data/app.db
+    npm run migrate
+    echo "Migration completed."
+fi
