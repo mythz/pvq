@@ -52,3 +52,11 @@ dotnet run --project meta.csproj
 cd ..
 
 echo "Database creation process completed."
+
+echo "Running pvq.app Migration..."
+
+cd ../pvq.app/MyApp/
+cp ../../pvq/questions/app.db ./App_Data/app.db
+npm run migrate
+
+echo "Migration completed."
