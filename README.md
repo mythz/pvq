@@ -28,18 +28,22 @@ Format:
 
 DR
 
-- [ ] Ranking of answers
+- [x] Ranking of answers
 - [ ] Test generation of comments for good context for highest rate answers
-- [ ] Store answer ranking etc in `???.meta.json`
+- [x] Store answer ranking etc in `???.meta.json`
 - [x] Add string? `CreatedBy`, `ModifiedBy` and `RefId` Column to Post
-- [ ] Rename stackoverflow-shootout bucket to pvq
+- [x] Rename stackoverflow-shootout bucket to pvq - Keeping stackoverflow-shootout for dev
 - [x] Create pvq-build bucket, move all /sql, app.db + other non-data to it
 - [x] Meta prompt for enhancing answers
-- [ ] Scripts to populate ModelVotes in DB
-- [ ] Scripts to calculate Leaderboard Page
-- [ ] Leaderboard Page and Blog Post
-- [ ] Setup Worker Scripts
+- [x] Scripts to populate ModelVotes in DB
+- [x] Scripts to calculate Leaderboard Page
+- [x] Leaderboard Page and Blog Post
+- [x] Setup Worker Scripts
 - [ ] Create Best ServiceStack Discourse Questions Use ?refId=[discourse post id]
+- [ ] Fix Missing and Undefined Separate step to extract votes from full validation response
+- [ ] Fix User Missing Avatar (Leaderboard)
+- [ ] Win Rate only what they participate in
+- [ ] Min 50 votes for total score and Take only models we have generated answers for
 
 DB
 
