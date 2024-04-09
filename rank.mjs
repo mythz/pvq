@@ -159,11 +159,11 @@ res.request = {
     modelMap: modelMap
 }
 
+const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
 logDebug('=== RESPONSE CONTENT ===')
-logDebug(res.choices[0].message.content)
+logDebug(responseContent)
 logDebug('=== END RESPONSE CONTENT ===\n\n')
 
-const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
 if (res.error != null) {
     logError(`ERROR ${id}: ${JSON.stringify(res.error)}`)
     if (res.error.code === 'rate_limit_exceeded') {
