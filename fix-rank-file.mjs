@@ -45,6 +45,11 @@ async function fixRankFile(filePath, modelName, userId) {
             // Map reasons back to "modelName": "reason" format
             let modelReasons = {};
             Object.keys(structuredReasons).forEach(key => {
+                // Check if validationJsonData modelMap has the key
+                if (!validationJsonData.modelMap.hasOwnProperty(key)) {
+                    logError(`Model map key not found: ${key}`);
+                    return;
+                }
                 modelReasons[validationJsonData.modelMap[key]] = structuredReasons[key];
             });
             // Check if valid json
