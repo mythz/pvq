@@ -21,7 +21,7 @@ let expectedReasonsSchema = {
         "score": {
             "type": "integer"
         },
-        "critique": {
+        "reason": {
             "type": "string"
         }
     }
@@ -50,14 +50,14 @@ async function fixRankFile(filePath, modelName, userId) {
             validationJsonData.response.choices[0].message.role === 'assistant';
 
         const validationDataHasModelMap = validationJsonData.modelMap != null && Object.keys(validationJsonData.modelMap).length > 0;
-        // If the content exists, prompt for the extraction of the critique
+        // If the content exists, prompt for the extraction of the reason
         if (contentExists && validationDataHasModelMap) {
             logInfo(`Content found in validation file: ${filePath}`)
             let structuredReasons = await promptForJustificationExtraction(validationJsonData.response.choices[0].message.content);
             // Map reasons back to "modelName": "reason" format
             const isValid = structuredReasons != null && Object.keys(structuredReasons).length > 0 &&
                 Object.keys(structuredReasons).every(key => key.length === 1 && key.match(/[A-Z]/) != null &&
-                    structuredReasons[key].hasOwnProperty('score') && structuredReasons[key].hasOwnProperty('critique'));
+                    structuredReasons[key].hasOwnProperty('score') && structuredReasons[key].hasOwnProperty('reason'));
             if (!isValid) {
                 logError(`Invalid structured reasons found in validation file: ${filePath}`);
                 return;
@@ -125,15 +125,15 @@ async function fixRankFile(filePath, modelName, userId) {
 }
 
 async function promptForJustificationExtraction(validationContent) {
-    let prompt = `I need you to extract each critique from the following text: 
+    let prompt = `I need you to extract each reason for the score from the following text: 
     
     ---
     ${validationContent}
     ---
     
-    Copy the content into a JSON structure where the key is the answer letter, eg "A", and the value is the critique is the value.
+    Copy the content into a JSON structure where the key is the answer letter, eg "A", and the value is the reason is the value.
 
-Here is the JSON Schema I am expecting for the structured critiques:
+Here is the JSON Schema I am expecting for the structured reasons:
 
     ${JSON.stringify(expectedReasonsSchema,null,4)}
     

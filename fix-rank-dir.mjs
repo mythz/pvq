@@ -24,6 +24,10 @@ function processDir(dirPath) {
     const candidates = files.filter(x => x.indexOf(`.validation.`) > -1 && !reasonIds.includes(x.split('.')[0]))
 
     candidates.forEach(file => {
+        if(file.endsWith('.validation.json')) {
+            // Skip, old validation file
+            return;
+        }
         console.log(`${fileCount++}: ./fix-rank-file.mjs ${path.join(dirPath, file)} ${modelName} ${port}`)
         const r = execSync(`./fix-rank-file.mjs ${path.join(dirPath, file)} ${modelName} ${port}`).toString()
         console.log(r)
