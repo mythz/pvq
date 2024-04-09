@@ -17,23 +17,14 @@ const temperature = 0.1
 let systemPrompt = { "role":"system", "content":"You are an AI assistant helping with tasks of structuring unstructured text into JSON format." }
 
 let expectedReasonsSchema = {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
-    "patternProperties": {
-        "^[A-Z]$": {
-            "type": "object",
-            "properties": {
-                "score": {
-                    "type": "integer"
-                },
-                "critique": {
-                    "type": "string"
-                }
-            },
-            "required": ["score", "critique"]
+    "<answer-letter>": {
+        "score": {
+            "type": "integer"
+        },
+        "critique": {
+            "type": "string"
         }
-    },
-    "additionalProperties": false
+    }
 }
 
 
@@ -64,6 +55,13 @@ async function fixRankFile(filePath, modelName, userId) {
             logInfo(`Content found in validation file: ${filePath}`)
             let structuredReasons = await promptForJustificationExtraction(validationJsonData.response.choices[0].message.content);
             // Map reasons back to "modelName": "reason" format
+            const isValid = structuredReasons != null && Object.keys(structuredReasons).length > 0 &&
+                Object.keys(structuredReasons).every(key => key.length === 1 && key.match(/[A-Z]/) != null &&
+                    structuredReasons[key].hasOwnProperty('score') && structuredReasons[key].hasOwnProperty('critique'));
+            if (!isValid) {
+                logError(`Invalid structured reasons found in validation file: ${filePath}`);
+                return;
+            }
             let modelReasons = {};
             Object.keys(structuredReasons).forEach(key => {
                 // Check if validationJsonData modelMap has the key
@@ -153,9 +151,7 @@ Here is the JSON Schema I am expecting for the structured critiques:
 
     ${JSON.stringify(expectedReasonsSchema,null,4)}
     
-    The above is just an example of the JSON structure. Use the text above about each answer to populate that structure and return it.
- 
-    Do this for each answer in the text and return a single JSON object.`
+    The above is the JSON schema, your output must adhere to it. Use the text above about each answer to populate that structure and return it.`
 
     let r = null
     try {
