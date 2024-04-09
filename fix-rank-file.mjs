@@ -141,11 +141,12 @@ async function promptForJustificationExtraction(validationContent) {
     const res = openAiResponse(resJson, modelName)
     logDebug('=== END PARSING RESPONSE ===\n\n')
 
+    const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
+
     logDebug('=== RESPONSE CONTENT ===')
-    logDebug(res.choices[0].message.content)
+    logDebug(responseContent)
     logDebug('=== END RESPONSE CONTENT ===\n\n')
 
-    const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
     // Extract the JSON from the text using regex
     let structuredReasons = responseContent.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
     if (structuredReasons == null || structuredReasons.length === 0) {
