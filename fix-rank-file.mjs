@@ -11,7 +11,7 @@ let modelName = process.argv[3]
 let port = process.argv[4]
 
 const { openAi } = useClient()
-const maxTokens = 4096
+const maxTokens = 2048
 const temperature = 0.1
 
 let systemPrompt = { "role":"system", "content":"You are an AI assistant helping with tasks of structuring unstructured text into JSON format." }
