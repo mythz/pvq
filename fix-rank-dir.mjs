@@ -17,7 +17,7 @@ let fileCount = 0
 
 function processDir(dirPath) {
     const nodes = fs.readdirSync(dirPath)
-    const files = nodes.filter(x => x.endsWith('.json')).filter(x => x.indexOf(`.validation.`) > -1)
+    const files = nodes.filter(x => x.endsWith('.json'))
     const subDirs = nodes.filter(x => !x.includes('.'))
     const reasonIds = files.filter(x => x.endsWith(`.reasons.json`)).map(x => x.split('.')[0])
 
