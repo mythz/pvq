@@ -16,6 +16,26 @@ const temperature = 0.1
 
 let systemPrompt = { "role":"system", "content":"You are an AI assistant helping with tasks of structuring unstructured text into JSON format." }
 
+let expectedReasonsSchema = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "patternProperties": {
+        "^[A-Z]$": {
+            "type": "object",
+            "properties": {
+                "score": {
+                    "type": "integer"
+                },
+                "critique": {
+                    "type": "string"
+                }
+            },
+            "required": ["score", "critique"]
+        }
+    },
+    "additionalProperties": false
+}
+
 
 async function fixRankFile(filePath, modelName, userId) {
     try {
@@ -128,6 +148,13 @@ async function promptForJustificationExtraction(validationContent) {
     ---
     
     Copy the content into a JSON structure where the key is the answer letter, eg "A", and the value is the critique is the value.
+
+Here is the JSON Schema I am expecting for the structured critiques:
+
+    ${JSON.stringify(expectedReasonsSchema,null,4)}
+    
+    The above is just an example of the JSON structure. Use the text above about each answer to populate that structure and return it.
+ 
     Do this for each answer in the text and return a single JSON object.`
 
     let r = null
