@@ -145,7 +145,7 @@ async function promptForJustificationExtraction(validationContent) {
     logDebug(res.choices[0].message.content)
     logDebug('=== END RESPONSE CONTENT ===\n\n')
 
-    const responseContent = res.choices[0].message.content
+    const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
     // Extract the JSON from the text using regex
     let structuredReasons = responseContent.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
     if (structuredReasons == null || structuredReasons.length === 0) {
@@ -169,7 +169,7 @@ async function promptForVoteExtraction(validationContent) {
     }
     const resJson = await r.text()
     const res = openAiResponse(resJson, modelName)
-    const responseContent = res.choices[0].message.content
+    const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
     // Extract the JSON from the text using regex
     let structuredVotes = responseContent.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
     if (structuredVotes == null || structuredVotes.length === 0) {
