@@ -38,8 +38,9 @@ async function fixRankFile(filePath, modelName, userId) {
             validationJsonData.response.choices[0].message != null && validationJsonData.response.choices[0].message.content != null &&
             validationJsonData.response.choices[0].message.role === 'assistant';
 
+        const validationDataHasModelMap = validationJsonData.modelMap != null && Object.keys(validationJsonData.modelMap).length > 0;
         // If the content exists, prompt for the extraction of the critique
-        if (contentExists) {
+        if (contentExists && validationDataHasModelMap) {
             logInfo(`Content found in validation file: ${filePath}`)
             let structuredReasons = await promptForJustificationExtraction(validationJsonData.response.choices[0].message.content);
             // Map reasons back to "modelName": "reason" format
