@@ -81,7 +81,6 @@ async function fixRankFile(filePath, modelName, userId) {
             }
         } else {
             logError(`Expected content not found in validation file: ${filePath}`);
-            logDebug(`Validation file data: ${JSON.stringify(validationJsonData, null,4)}`);
             return;
         }
 
@@ -139,6 +138,8 @@ Here is the JSON Schema I am expecting for the structured reasons:
     
     The above is the JSON schema, your output must adhere to it. Use the text above about each answer to populate that structure and return it.`
 
+    const id = `${lastRightPart(lastLeftPart(file, '.'), '/')}`.padStart(3, '0')
+    let startTime = performance.now()
     let r = null
     try {
         // logDebug(`=== REQUEST ${id} ===`)
@@ -154,18 +155,17 @@ Here is the JSON Schema I am expecting for the structured reasons:
     // logDebug(`=== RESPONSE ${id} ===`)
     const resJson = await r.text()
 
+    let endTime = performance.now()
+    let elapsed_ms = parseInt(endTime - startTime)
+
+    logDebug(`=== RESPONSE ${id} in ${elapsed_ms}ms ===\n`)
+
 // Check if resJson is empty
     logDebug('RESPONSE JSON LENGTH: ' + resJson.length)
 
-    logDebug('=== PARSING RESPONSE ===')
     const res = openAiResponse(resJson, modelName)
-    logDebug('=== END PARSING RESPONSE ===\n\n')
 
     const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
-
-    logDebug('=== RESPONSE CONTENT ===')
-    logDebug(responseContent)
-    logDebug('=== END RESPONSE CONTENT ===\n\n')
 
     // Extract the JSON from the text using regex
     let structuredReasons = responseContent.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
