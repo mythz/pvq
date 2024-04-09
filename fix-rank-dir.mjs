@@ -21,7 +21,7 @@ function processDir(dirPath) {
     const subDirs = nodes.filter(x => !x.includes('.'))
     const reasonIds = files.filter(x => x.endsWith(`.reasons.json`)).map(x => x.split('.')[0])
 
-    const candidates = files.filter(x => x.indexOf(`.validation.`) && !reasonIds.includes(x.split('.')[0]))
+    const candidates = files.filter(x => x.indexOf(`.validation.`) > -1 && !reasonIds.includes(x.split('.')[0]))
 
     candidates.forEach(file => {
         console.log(`${fileCount++}: ./fix-rank-file.mjs ${path.join(dirPath, file)} ${modelName} ${port}`)

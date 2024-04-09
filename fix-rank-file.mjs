@@ -111,26 +111,12 @@ async function fixRankFile(filePath, modelName, userId) {
                 return;
             }
 
-            let structuredAnswers = promptForVoteExtraction(validationJsonData.response.choices[0].message.content);
-            // Map reasons back to "modelName": "reason" format
-            let modelVotes = {};
-            Object.keys(structuredAnswers).forEach(key => {
-                modelVotes[validationJsonData.modelMap[key]] = structuredAnswers[key];
-            });
-            // Check if valid json
-            if (Object.keys(modelVotes).length > 0) {
-                // Write the structured answers to the votes file
-                fs.writeFileSync(votesFile, JSON.stringify(modelVotes, null, 4));
-                logInfo(`Votes file written: ${votesFile}`);
-            } else {
-                logError(`No structured answers found in validation file: ${filePath}`);
-            }
-
             // Check if all the models are present in the votes file
             let missingModels = answerModelNames.filter(model => !votesJsonData.modelVotes.hasOwnProperty(model));
             if (missingModels.length > 0) {
                 logError(`Missing votes for models: ${missingModels.join(', ')}`);
             }
+            // TODO - Prompt for missing votes answer by answer
         }
     } catch (error) {
         console.log(`Error processing file: ${filePath}`, error)
@@ -188,30 +174,6 @@ Here is the JSON Schema I am expecting for the structured critiques:
         return {};
     }
     return JSON.parse(structuredReasons[0]);
-}
-
-async function promptForVoteExtraction(validationContent) {
-    let prompt = `I need you to extract the votes from the following text: ${validationContent}
-    Copy the content into a JSON structure where the key is the answer letter, eg "A", and the value is the vote.
-    Do this for each answer in the text and return all votes in a single JSON object.`
-    let r = null;
-    try {
-        r = await openAi({ content: prompt, model: modelName, port, systemPrompt, temperature, maxTokens })
-    } catch (e) {
-        console.log(e)
-        logError(`Failed:`, e)
-        process.exit()
-    }
-    const resJson = await r.text()
-    const res = openAiResponse(resJson, modelName)
-    const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
-    // Extract the JSON from the text using regex
-    let structuredVotes = responseContent.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
-    if (structuredVotes == null || structuredVotes.length === 0) {
-        logError(`No structured votes found in response: ${responseContent}`);
-        return {};
-    }
-    return structuredVotes;
 }
 
 await fixRankFile(file, modelName, port)
