@@ -26,6 +26,7 @@ function processDir(dirPath) {
     candidates.forEach(file => {
         if(file.endsWith('.validation.json')) {
             // Skip, old validation file
+            console.log(`skipping: ${file}`)
             return;
         }
         console.log(`${fileCount++}: ./fix-rank-file.mjs ${path.join(dirPath, file)} ${modelName} ${port}`)
