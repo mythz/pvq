@@ -56,7 +56,7 @@ async function fixRankFile(filePath, modelName, userId) {
                 logError(`No structured reasons found in validation file: ${filePath}`);
             }
         } else {
-            logError(`No content found in validation file: ${filePath}`);
+            logError(`Expected content not found in validation file: ${filePath}`);
             logDebug(`Validation file data: ${JSON.stringify(validationJsonData, null,4)}`);
             return;
         }
