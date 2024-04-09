@@ -156,6 +156,7 @@ res.request = {
     temperature,
     max_tokens: maxTokens,
     elapsed_ms,
+    modelMap: modelMap
 }
 
 logDebug('=== RESPONSE CONTENT ===')
