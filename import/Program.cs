@@ -1,3 +1,4 @@
+using System.Data;
 using System.Diagnostics;
 using ServiceStack;
 using ServiceStack.Text;
@@ -20,7 +21,6 @@ if (File.Exists($"{basePath}/app.db".MapProjectPath())) File.Delete($"{basePath}
 File.Copy($"{baseDataPath}/filtered.db".MapProjectPath(), $"{basePath}/app.db".MapProjectPath());
 
 var dbFactory = new OrmLiteConnectionFactory($"{basePath}/app.db".MapProjectPath(), SqliteDialect.Provider);
-var dbFactoryOriginal = new OrmLiteConnectionFactory($"{baseDataPath}/stackoverflow_posts.db".MapProjectPath(), SqliteDialect.Provider);
 
 using var db = dbFactory.Open();
 
@@ -30,22 +30,26 @@ var allPostIds = allPosts.ConvertAll(x => x.Id);
 var allAcceptedAnswerIds = allPosts.ConvertAll(x => x.AcceptedAnswerId)
     .Where(x => x.HasValue).Select(x => x.Value).ToList();
 
-Console.WriteLine("Selecting Posts from Original DB...");
-using var origDb = dbFactoryOriginal.Open();
+
 // origDb.Select<Post>(q => Sql.In(q.Id, allPostIds)); produces a SQL error, build the query manually
 
 var serializedHighestScoreAnswersMapExists = File.Exists(Path.Join(baseDataPath, "highest-score-answers.json"));
 Dictionary<int?, Post> highestScoreAnswerMap;
 List<Post>? highestScoreAnswers;
+OrmLiteConnectionFactory? dbFactoryOriginal;
+IDbConnection? origDb;
 if(serializedHighestScoreAnswersMapExists)
 {
-    Console.WriteLine("Reading Highest voted answers from Original DB...");
+    Console.WriteLine("Reading Highest voted answers from cached json...");
     var highestScoreAnswersJson = await File.ReadAllTextAsync(Path.Join(baseDataPath, "highest-score-answers.json"));
     highestScoreAnswers = highestScoreAnswersJson.FromJson<List<Post>>();
     highestScoreAnswerMap = highestScoreAnswers.ToDictionary(x => x.ParentId, x => x);
 }
 else
 {
+    Console.WriteLine("Selecting Posts from Original DB...");
+    dbFactoryOriginal = new OrmLiteConnectionFactory($"{baseDataPath}/stackoverflow_posts.db".MapProjectPath(), SqliteDialect.Provider);
+    origDb = dbFactoryOriginal.Open();
     Console.WriteLine("Selecting Highest voted answers from Original DB...");
     // Create a map of highest scoring answers to question posts, using HAVING MAX(score) to group by parentid
     var highestScoreAnswerSql = $"select * from posts where parentid in ({string.Join(",", allPostIds)}) and posttypeid = 2 group by parentid having max(score)";
@@ -95,6 +99,8 @@ db.UpdateAll(allPosts);
 if(args.Contains("--skip-files")) return;
 
 var acceptedAnswerSql = $"select * from posts where id in ({string.Join(",", allAcceptedAnswerIds)})";
+dbFactoryOriginal = new OrmLiteConnectionFactory($"{baseDataPath}/stackoverflow_posts.db".MapProjectPath(), SqliteDialect.Provider);
+origDb = dbFactoryOriginal.Open();
 var acceptedAnswers = origDb.Select<Post>(acceptedAnswerSql);
 
 // Create a map of accepted answers to question posts

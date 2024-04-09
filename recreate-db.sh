@@ -1,5 +1,5 @@
 #!/bin/bash
-aws s3 sync s3://pvq-build/data_post.sql ./data/ --endpoint-url https://b95f38ca3a6ac31ea582cd624e6eb385.r2.cloudflarestorage.com
+aws s3 sync s3://pvq-build/ ./data/ --exclude "*" --include "*data_post.sql" --include "*highest-score-answers.json" --profile r2 --endpoint-url https://b95f38ca3a6ac31ea582cd624e6eb385.r2.cloudflarestorage.com
 
 # Set the path to your SQLite database file
 DB_FILE="./data/filtered.db"
@@ -34,7 +34,7 @@ echo "Running import script..."
 sleep 1
 
 cd import
-dotnet run --project import.csproj $1
+dotnet run --project import.csproj --skip-files
 cd ..
 
 sleep 1
@@ -52,3 +52,20 @@ dotnet run --project meta.csproj
 cd ..
 
 echo "Database creation process completed."
+
+# Check if the ../pvq.app directory exists
+if [ -d "../pvq.app" ]; then
+    echo "Running pvq.app Migration..."
+    cd ../pvq.app/MyApp/
+    cp ../../pvq/questions/app.db ./App_Data/app.db
+    npm run migrate
+    echo "Migration completed."
+else
+    echo "Running pvq Migration..."
+    cd ..
+    cp ./pvq/questions/app.db ./App_Data/app.db
+    export APP_ID=$(docker compose run --entrypoint "id -u" --rm app)
+    docker compose run --entrypoint "chown $APP_ID:$APP_ID /app/App_Data" --user root --rm app
+    docker compose up app-migration --exit-code-from app-migration
+    echo "Migration completed."
+fi
