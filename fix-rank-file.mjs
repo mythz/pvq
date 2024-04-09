@@ -179,5 +179,6 @@ async function promptForVoteExtraction(validationContent) {
     return structuredVotes;
 }
 
-fixRankFile(file, modelName, port)
+await fixRankFile(file, modelName, port)
+process.exit(0)
 
