@@ -121,9 +121,14 @@ async function fixRankFile(filePath, modelName, userId) {
 }
 
 async function promptForJustificationExtraction(validationContent) {
-    let prompt = `I need you to extract the critique from the following text: ${validationContent}
-    Copy the content into a JSON structure where the key is the answer letter, eg "A", and the value is the critique.
-    Do this for each answer in the text.`
+    let prompt = `I need you to extract each critique from the following text: 
+    
+    ---
+    ${validationContent}
+    ---
+    
+    Copy the content into a JSON structure where the key is the answer letter, eg "A", and the value is the critique is the value.
+    Do this for each answer in the text and return a single JSON object.`
 
     let r = null
     try {
