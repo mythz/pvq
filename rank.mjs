@@ -194,6 +194,9 @@ if (responseContent) {
     }
     let voteMap = {}
     for (let key in voteJson) {
+        if(modelMap[key] == null) {
+            continue;
+        }
         voteMap[modelMap[key]] = voteJson[key]
     }
 
