@@ -91,7 +91,15 @@ export function openAiModel(model) {
 }
 
 export function openAiResponse(txt, model) {
-    const res = JSON.parse(txt)
+    let res = null
+    try {
+        res = JSON.parse(txt)
+    } catch(e) {
+        console.log('Failed to parse response', e)
+        console.log(txt)
+        return null
+    }
+
     const created = Math.floor(new Date().getTime() / 1000)
 
     let provider = ModelProviders[model]
