@@ -56,6 +56,7 @@ public static class Regenerate
         foreach (var answerFile in answerFiles)
         {
             var model = answerFile.GetAnswerUserName(filePrefix);
+            if(model == "undefined") continue;
             if (!meta.ModelVotes.ContainsKey(model))
                 meta.ModelVotes[model] = ModelScores.GetValueOrDefault(model, 0);
         }
@@ -80,6 +81,52 @@ public static class Regenerate
             Console.WriteLine($"Error reading votes file {votesFile} : {e.Message} \nSkipping...");
             return null;
         } 
+        
+        // Read *.reasons.* files to find matching model votes
+        // Validate votes match before incorporating reason text into meta
+        var reasonsFiles = Directory.GetFiles(Path.Join(baseDir.FullName), $"{filePrefix}.reasons.*").ToList();
+        foreach (var reasonsFile in reasonsFiles)
+        {
+            var reasons = await File.ReadAllTextAsync(reasonsFile);
+            if (reasons.IsEmpty())
+            {
+                Console.WriteLine($"Empty reasons file {reasonsFile}");
+                continue;
+            }
+            
+            var dictReasons = reasons.FromJson<Dictionary<string, VoteReason>>();
+            // Validate reasons match votes
+            if (dictReasons.Count != modelVote.ModelVotes.Count)
+            {
+                Console.WriteLine($"Mismatched reasons count for number of votes in {reasonsFile}");
+                continue;
+            }
+            
+            foreach (var (key, value) in dictReasons)
+            {
+                if (!modelVote.ModelVotes.ContainsKey(key))
+                {
+                    Console.WriteLine($"Model {key} not found in {votesFile}");
+                    continue;
+                }
+                if (modelVote.ModelReasons.ContainsKey(key))
+                {
+                    Console.WriteLine($"Model {key} already has reasons in {votesFile}");
+                    continue;
+                }
+                
+                var vote = modelVote.ModelVotes[key];
+                var score = value.Score;
+                if (Math.Abs(vote - score) > 0.1)
+                {
+                    Console.WriteLine($"Mismatched score for {key} in {votesFile}");
+                    continue;
+                }
+                
+                modelVote.ModelReasons[key] = value.Reason;
+            }
+            
+        }
             
 
         // Question
@@ -115,6 +162,9 @@ public static class Regenerate
         }
 
         meta.StatTotals = liveStats;
+        meta.ModelVotes = modelVote.ModelVotes;
+        meta.ModelReasons = modelVote.ModelReasons;
+        
         return meta;
     }
     
@@ -122,13 +172,17 @@ public static class Regenerate
     {
         var modelName = answerFileName.Contains(".a.") ? answerFileName.RightPart(fileId + ".a.").SplitOnLast('.')[0]
             : answerFileName.RightPart(fileId + ".h.").SplitOnLast('.')[0];
+        modelName = ModelUserNameFixes.GetValueOrDefault(modelName, modelName);
         return modelName;
     }
-    
-    public static List<string> ModelUserNames { get; } = [
-        "phi", "gemma-2b", "qwen-4b", "codellama", "gemma", "deepseek-coder-6.7b", "mistral", "mixtral","gpt-4-turbo",
-        "claude-3-haiku","claude-3-sonnet","claude-3-opus"
-    ];
+
+    public static Dictionary<string, string> ModelUserNameFixes { get; } =
+        new()
+        {
+            {"deepseek-coder-6.7b","deepseek-coder"},
+            {"deepseek-coder-6","deepseek-coder"},
+
+        };
     public static Dictionary<string,int> ModelScores = new()
     {
         ["phi"] = 1, //2.7B
@@ -149,6 +203,13 @@ public static class Regenerate
 public class Vote
 {
     public Dictionary<string, double> ModelVotes { get; set; } = [];
+    public Dictionary<string, string> ModelReasons { get; set; } = [];
+}
+
+public class VoteReason
+{
+    public double Score { get; set; }
+    public string Reason { get; set; }
 }
 
 /// <summary>
@@ -215,6 +276,8 @@ public class Meta
 
     // ModelName => Votes
     public Dictionary<string, double> ModelVotes { get; set; } = [];
+
+    public Dictionary<string, string> ModelReasons { get; set; } = [];
 
     // Question + Answer Stats Totals
     public List<StatTotals> StatTotals { get; set; } = [];

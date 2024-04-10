@@ -156,6 +156,7 @@ res.request = {
     temperature,
     max_tokens: maxTokens,
     elapsed_ms,
+    modelMap: modelMap
 }
 
 const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
@@ -193,6 +194,9 @@ if (responseContent) {
     }
     let voteMap = {}
     for (let key in voteJson) {
+        if(modelMap[key] == null) {
+            continue;
+        }
         voteMap[modelMap[key]] = voteJson[key]
     }
 
