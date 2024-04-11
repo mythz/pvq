@@ -149,6 +149,11 @@ logDebug('RESPONSE JSON LENGTH: ' + resJson.length)
 logDebug('=== PARSING RESPONSE ===')
 const res = openAiResponse(resJson, model)
 logDebug('=== END PARSING RESPONSE ===\n\n')
+if (!res) {
+    logError(`ERROR ${id}: NO RESPONSE`)
+    process.exit()
+}
+
 res.request = {
     id,
     created,
