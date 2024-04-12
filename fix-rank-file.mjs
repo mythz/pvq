@@ -131,7 +131,7 @@ async function promptForJustificationExtraction(validationContent, validationFil
     ---
     
     Copy the content into a JSON structure where the key is the answer letter, eg "A", and the value is the reason is the value.
-    Make sure to escape any double quotes in the reason with a backslash, eg "This is a \\"reason\\"". As well as any black slashes in the original content.
+    Make sure to escape any double quotes in the reason with a backslash, eg "This is a \\"reason\\" and we can use $\\"\\" double quotes". As well as any black slashes in the original content.
     Only use letters as keys, if source material uses numbers, pick the first when transcribing into JSON. Eg. "F1" -> "F". 
     Multiple solutions should be ignored, pick one so that your JSON matches the schema.
 
@@ -174,7 +174,7 @@ Here is the JSON Schema I am expecting for the structured reasons:
             return {};
         }
         // Replace any escaped backslashes not before a double quote
-        const correctedJson = structuredReasons[0].replace(/\\(?!")/g, '\\\\').replace("\"\"","\\\"\\\"")
+        const correctedJson = structuredReasons[0].replace(/\\(?!")/g, '\\\\').replaceAll("$\"\"","$\\\"\\\"")
         logDebug('=== STRUCTURED REASONS ===')
         logDebug(structuredReasons[0])
         logDebug('=== END STRUCTURED REASONS ===\n\n')
