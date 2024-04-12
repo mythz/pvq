@@ -170,10 +170,12 @@ Here is the JSON Schema I am expecting for the structured reasons:
             logError(`No structured reasons found in response: ${responseContent}`);
             return {};
         }
+        //Apply escape sequences to the JSON string
+        const correctedJson = structuredReasons[0].replace(/\\(?!")/g, '\\\\');
         logDebug('=== STRUCTURED REASONS ===')
         logDebug(structuredReasons[0])
         logDebug('=== END STRUCTURED REASONS ===\n\n')
-        return JSON.parse(structuredReasons[0]);
+        return JSON.parse(correctedJson);
     } catch (e) {
         logError(`Failed:`, e.message);
         logDebug(`Stack: ${e.stack}`);
