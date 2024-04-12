@@ -90,3 +90,5 @@ if (content) {
     fs.writeFileSync(lastLeftPart(path,'.') + `.e.${safeModel}.json`, JSON.stringify(res, undefined, 2), 'UTF-8')
 }
 logDebug(`\n=== END RESPONSE ${id} in ${elapsed_ms}ms ===\n\n`)
+// Explicitly exit to avoid hanging
+process.exit(0);
