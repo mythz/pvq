@@ -17,14 +17,22 @@ const temperature = 0.1
 let systemPrompt = { "role":"system", "content":"You are an AI assistant helping with tasks of structuring unstructured text into JSON format." }
 
 let expectedReasonsSchema = {
-    "<answer-letter>": {
+    "A": {
         "score": {
             "type": "integer"
         },
         "reason": {
             "type": "string"
         }
-    }
+    },
+    "[^B-Z]": {
+        "score": {
+            "type": "integer"
+        },
+        "reason": {
+            "type": "string"
+        }
+    },
 }
 
 
