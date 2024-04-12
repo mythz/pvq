@@ -39,11 +39,14 @@ DR
 - [x] Scripts to calculate Leaderboard Page
 - [x] Leaderboard Page and Blog Post
 - [x] Setup Worker Scripts
-- [ ] Create Best ServiceStack Discourse Questions Use ?refId=[discourse post id]
-- [ ] Fix Missing and Undefined Separate step to extract votes from full validation response
-- [ ] Fix User Missing Avatar (Leaderboard)
-- [ ] Win Rate only what they participate in
+- [x] Create Best ServiceStack Discourse Questions Use ?refId=[discourse post id]
+- [x] Fix Missing and Undefined Separate step to extract votes from full validation response
+- [x] Fix User Missing Avatar (Leaderboard)
+- [x] Win Rate only what they participate in
 - [ ] Min 50 votes for total score and Take only models we have generated answers for
+- [ ] Create workflow to handle rank response missing votes for answers, should be the same as ranking a new answer
+- [ ] Investigate use of framework DSPy for more reliable prompting, and option for future RAG solution for docs
+
 
 DB
 
