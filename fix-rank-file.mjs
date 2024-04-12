@@ -170,6 +170,9 @@ Here is the JSON Schema I am expecting for the structured reasons:
         logError(`No structured reasons found in response: ${responseContent}`);
         return {};
     }
+    logDebug('=== STRUCTURED REASONS ===')
+    logDebug(structuredReasons[0])
+    logDebug('=== END STRUCTURED REASONS ===\n\n')
     return JSON.parse(structuredReasons[0]);
     } catch (e) {
         logError(`Failed:`, e)
