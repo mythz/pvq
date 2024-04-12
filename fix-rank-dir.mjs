@@ -19,7 +19,7 @@ function processDir(dirPath) {
     const nodes = fs.readdirSync(dirPath)
     const files = nodes.filter(x => x.endsWith('.json'))
     const subDirs = nodes.filter(x => !x.includes('.'))
-    const reasonIds = files.filter(x => x.indexOf(`.reasons.`)).map(x => x.split('.')[0])
+    const reasonIds = files.filter(x => x.indexOf(`.reasons.`) > -1).map(x => x.split('.')[0])
 
     const candidates = files.filter(x => x.indexOf(`.validation.`) > -1 && !reasonIds.includes(x.split('.')[0]))
 
