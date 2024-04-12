@@ -178,6 +178,10 @@ Here is the JSON Schema I am expecting for the structured reasons:
         logDebug('=== STRUCTURED REASONS ===')
         logDebug(structuredReasons[0])
         logDebug('=== END STRUCTURED REASONS ===\n\n')
+        logDebug('=== CORRECTED JSON ===')
+        logDebug(correctedJson)
+        logDebug('=== END CORRECTED JSON ===\n\n')
+
         return JSON.parse(correctedJson);
     } catch (e) {
         logError(`Failed:`, e.message);
