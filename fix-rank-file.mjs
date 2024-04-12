@@ -143,37 +143,37 @@ Here is the JSON Schema I am expecting for the structured reasons:
     let r = null
     let resJson = null
     try {
-        // logDebug(`=== REQUEST ${id} ===`)
-        // logDebug(`${id}, ${questionPath}`)
-        // logDebug(`=== END REQUEST ${id} ===\n\n`)
+        logDebug(`=== REQUEST ${id} ===`)
+        logDebug(`${id}, ${validationFilePath}`)
+        logDebug(`=== END REQUEST ${id} ===\n\n`)
 
-        r = await openAi({ content: prompt, model: modelName, port, systemPrompt, temperature, maxTokens })
+        r = await openAi({content: prompt, model: modelName, port, systemPrompt, temperature, maxTokens})
 
-    // logDebug(`=== RESPONSE ${id} ===`)
-    resJson = await r.text()
+        logDebug(`=== RESPONSE ${id} ===`)
+        resJson = await r.text()
 
-    let endTime = performance.now()
-    let elapsed_ms = parseInt(endTime - startTime)
+        let endTime = performance.now()
+        let elapsed_ms = parseInt(endTime - startTime)
 
-    logDebug(`=== RESPONSE ${id} in ${elapsed_ms}ms ===\n`)
+        logDebug(`=== RESPONSE ${id} in ${elapsed_ms}ms ===\n`)
 
-// Check if resJson is empty
-    logDebug('RESPONSE JSON LENGTH: ' + resJson.length)
+        // Check if resJson is empty
+        logDebug('RESPONSE JSON LENGTH: ' + resJson.length)
 
-    const res = openAiResponse(resJson, modelName)
+        const res = openAiResponse(resJson, modelName)
 
-    const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
+        const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
 
-    // Extract the JSON from the text using regex
-    let structuredReasons = responseContent.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
-    if (structuredReasons == null || structuredReasons.length === 0) {
-        logError(`No structured reasons found in response: ${responseContent}`);
-        return {};
-    }
-    logDebug('=== STRUCTURED REASONS ===')
-    logDebug(structuredReasons[0])
-    logDebug('=== END STRUCTURED REASONS ===\n\n')
-    return JSON.parse(structuredReasons[0]);
+        // Extract the JSON from the text using regex
+        let structuredReasons = responseContent.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
+        if (structuredReasons == null || structuredReasons.length === 0) {
+            logError(`No structured reasons found in response: ${responseContent}`);
+            return {};
+        }
+        logDebug('=== STRUCTURED REASONS ===')
+        logDebug(structuredReasons[0])
+        logDebug('=== END STRUCTURED REASONS ===\n\n')
+        return JSON.parse(structuredReasons[0]);
     } catch (e) {
         logError(`Failed:`, e.message)
         logDebug(`Stack: ${e.stackTrace}`)
