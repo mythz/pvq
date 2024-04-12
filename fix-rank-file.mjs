@@ -174,7 +174,7 @@ Here is the JSON Schema I am expecting for the structured reasons:
             return {};
         }
         // Replace any escaped backslashes not before a double quote
-        const correctedJson = structuredReasons[0].replace(/\\(?!")/g, '\\\\');
+        const correctedJson = structuredReasons[0].replace(/\\(?!")/g, '\\\\').replace("\"\"","\\\"\\\"")
         logDebug('=== STRUCTURED REASONS ===')
         logDebug(structuredReasons[0])
         logDebug('=== END STRUCTURED REASONS ===\n\n')
