@@ -175,12 +175,12 @@ Here is the JSON Schema I am expecting for the structured reasons:
         logDebug('=== END STRUCTURED REASONS ===\n\n')
         return JSON.parse(structuredReasons[0]);
     } catch (e) {
-        logError(`Failed:`, e.message)
-        logDebug(`Stack: ${e.stackTrace}`)
+        logError(`Failed:`, e.message);
+        logDebug(`Stack: ${e.stack}`);
         // Write error file based on validationFilePath
         let errorFilePath = validationFilePath.replace('.validation.', '.fix-rank.e.');
-        fs.writeFileSync(errorFilePath, JSON.stringify({error: e, response: resJson}), 'UTF-8');
-        process.exit()
+        fs.writeFileSync(errorFilePath, JSON.stringify({error: e.message, stack: e.stack, response: resJson}), 'UTF-8');
+        process.exit();
     }
 }
 
