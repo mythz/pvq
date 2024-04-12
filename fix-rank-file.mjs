@@ -53,7 +53,7 @@ async function fixRankFile(filePath, modelName, userId) {
         // If the content exists, prompt for the extraction of the reason
         if (contentExists && validationDataHasModelMap) {
             logInfo(`Content found in validation file: ${filePath}`)
-            let structuredReasons = await promptForJustificationExtraction(validationJsonData.response.choices[0].message.content);
+            let structuredReasons = await promptForJustificationExtraction(validationJsonData.response.choices[0].message.content,filePath);
             // Map reasons back to "modelName": "reason" format
             const isValid = structuredReasons != null && Object.keys(structuredReasons).length > 0 &&
                 Object.keys(structuredReasons).every(key => key.length === 1 && key.match(/[A-Z]/) != null &&
@@ -123,7 +123,7 @@ async function fixRankFile(filePath, modelName, userId) {
     }
 }
 
-async function promptForJustificationExtraction(validationContent) {
+async function promptForJustificationExtraction(validationContent, validationFilePath) {
     let prompt = `I need you to extract each reason for the score from the following text: 
     
     ---
@@ -141,19 +141,16 @@ Here is the JSON Schema I am expecting for the structured reasons:
     const id = `${lastRightPart(lastLeftPart(file, '.'), '/')}`.padStart(3, '0')
     let startTime = performance.now()
     let r = null
+    let resJson = null
     try {
         // logDebug(`=== REQUEST ${id} ===`)
         // logDebug(`${id}, ${questionPath}`)
         // logDebug(`=== END REQUEST ${id} ===\n\n`)
 
         r = await openAi({ content: prompt, model: modelName, port, systemPrompt, temperature, maxTokens })
-    } catch (e) {
-        console.log(e)
-        logError(`Failed:`, e)
-        process.exit()
-    }
+
     // logDebug(`=== RESPONSE ${id} ===`)
-    const resJson = await r.text()
+    resJson = await r.text()
 
     let endTime = performance.now()
     let elapsed_ms = parseInt(endTime - startTime)
@@ -174,6 +171,13 @@ Here is the JSON Schema I am expecting for the structured reasons:
         return {};
     }
     return JSON.parse(structuredReasons[0]);
+    } catch (e) {
+        logError(`Failed:`, e)
+        // Write error file based on validationFilePath
+        let errorFilePath = validationFilePath.replace('.validation.', '.fix-rank.e.');
+        fs.writeFileSync(errorFilePath, JSON.stringify({error: e, response: resJson}), 'UTF-8');
+        process.exit()
+    }
 }
 
 await fixRankFile(file, modelName, port)
