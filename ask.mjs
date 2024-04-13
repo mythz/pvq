@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import fs from "fs"
-import { useClient, useLogging, idParts, lastLeftPart } from "./lib.mjs"
+import {useClient, useLogging, idParts, lastLeftPart, groqRateLimiting} from "./lib.mjs"
 
 let path = process.argv[2]
 let model = process.argv[3]
@@ -56,8 +56,16 @@ let elapsed_ms = parseInt(endTime - startTime)
 
 logDebug(`=== RESPONSE ${id} in ${elapsed_ms}ms ===\n`)
 const txt = await r.text()
+
 if (!r.ok) {
     console.log(`${r.status} openAi request failed: ${txt}`)
+    if (r.status === 429) {
+        console.log('Rate limited.')
+        // Try handle GROQ rate limiting, if not found, defaults to 1000ms
+        let rateLimit = groqRateLimiting(txt);
+        if(rateLimit.found)
+            await new Promise(resolve => setTimeout(resolve, rateLimit.waitTime))
+    }
     process.exit()
 }
 

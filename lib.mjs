@@ -380,6 +380,24 @@ export function loadEnv() {
     }
 }
 
+export function groqRateLimiting(txt) {
+    const regex = /Please try again in (\d+\.\d+)s/;
+    const match = txt.match(regex);
+    let waitTime = 1000;
+    let found = match && match[1]
+    if (match && match[1]) {
+        try {
+            waitTime = parseFloat(match[1]) * 1000;
+        } catch (e) {
+            console.error(e);
+        }
+    } else {
+        console.log("No match found.");
+    }
+    console.log('Waiting for', waitTime, 'ms')
+    return { found, waitTime };
+}
+
 export function idParts(id) {
     const idStr = `${id}`.padStart(9, '0')
     const dir1 = idStr.substring(0,3)

@@ -2,7 +2,7 @@
 
 import fs from "fs"
 import path from "path"
-import {useClient, useLogging, idParts, lastLeftPart, lastRightPart, openAiResponse} from "./lib.mjs"
+import {useClient, useLogging, idParts, lastLeftPart, lastRightPart, openAiResponse, groqRateLimiting} from "./lib.mjs"
 
 let questionPath = process.argv[2]
 let model = process.argv[3]
@@ -140,14 +140,26 @@ let elapsed_ms = parseInt(endTime - startTime)
 
 logDebug(`=== RESPONSE ${id} in ${elapsed_ms}ms ===\n`)
 
-const resJson = await r.text()
+const txt = await r.text()
 const created = new Date().toISOString()
 
 // Check if resJson is empty
-logDebug('RESPONSE JSON LENGTH: ' + resJson.length)
+logDebug('RESPONSE JSON LENGTH: ' + txt.length)
+
+if (!r.ok) {
+    console.log(`${r.status} openAi request failed: ${txt}`)
+    if (r.status === 429) {
+        console.log('Rate limited.')
+        // Try handle GROQ rate limiting, if not found, defaults to 1000ms
+        let rateLimit = groqRateLimiting(txt);
+        if(rateLimit.found)
+            await new Promise(resolve => setTimeout(resolve, rateLimit.waitTime))
+    }
+    process.exit()
+}
 
 logDebug('=== PARSING RESPONSE ===')
-const res = openAiResponse(resJson, model)
+const res = openAiResponse(txt, model)
 logDebug('=== END PARSING RESPONSE ===\n\n')
 if (!res) {
     logError(`ERROR ${id}: NO RESPONSE`)
