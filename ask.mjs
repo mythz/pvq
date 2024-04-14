@@ -37,42 +37,58 @@ logDebug(`=== END REQUEST ${id} ===\n\n`)
 const { openAi, openAiDefaults, openAiFromModel, openAiResponse } = useClient()
 const { systemPrompt, temperature, maxTokens } = openAiDefaults()
 
-let r = null
-let startTime = performance.now()
-try {
-    const content = "Title: " + title + "\n\nTags:" + tags.join(',') + "\n\n" + body
-    
-    r = await openAi({ content, model, port, systemPrompt })
-    // if (r) {
-    //     console.log(`openAi response: ${r.status} ${r.statusText}`)
-    //     console.log(r.headers)
-    // }
-} catch (e) {
-    logError(`Failed:`, e)
-    process.exit()
-}
-let endTime = performance.now()
-let elapsed_ms = parseInt(endTime - startTime)
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-logDebug(`=== RESPONSE ${id} in ${elapsed_ms}ms ===\n`)
-const txt = await r.text()
+let retry = 0
+let elapsed_ms = 0
+let txt = null
+let res = null
 
-if (!r.ok) {
-    console.log(`${r.status} openAi request failed: ${txt}`)
-    if (r.status === 429) {
-        console.log('Rate limited.')
-        // Try handle GROQ rate limiting, if not found, defaults to 1000ms
-        let rateLimit = groqRateLimiting(txt);
-        if(rateLimit.found)
-            await new Promise(resolve => setTimeout(resolve, rateLimit.waitTime))
+while (retry++ <= 10) {
+    let startTime = performance.now()
+    let sleepMs = 1000 * retry
+    try {
+        const content = "Title: " + title + "\n\nTags:" + tags.join(',') + "\n\n" + body
+        
+        const r = await openAi({ content, model, port, systemPrompt })
+        // if (r) {
+        //     console.log(`openAi response: ${r.status} ${r.statusText}`)
+        //     console.log(r.headers)
+        // }
+        let endTime = performance.now()
+        elapsed_ms = parseInt(endTime - startTime)
+        
+        logDebug(`=== RESPONSE ${id} in ${elapsed_ms}ms ===\n`)
+        txt = await r.text()
+        if (!r.ok) {
+            console.log(`${r.status} openAi request ${retry + 1} failed: ${txt}`)
+            if (r.status === 429) {
+                console.log('Rate limited.')
+                // Try handle GROQ rate limiting, if not found, defaults to 1000ms
+                let rateLimit = groqRateLimiting(txt);
+                if (rateLimit.found)
+                    sleepMs = rateLimit.waitTime
+            }
+        } else {
+            res = openAiResponse(txt, model)
+        }
+        if (res) break
+    } catch (e) {
+        logError(`Failed:`, e)
     }
-    process.exit()
+    console.log(`retrying in ${sleepMs}ms...`)
+    await sleep(sleepMs)
 }
 
-const res = openAiResponse(txt, model)
+const safeModel = openAiFromModel(model).replace(/:/g,'-')
+const errorFileName = lastLeftPart(path,'.') + `.e.${safeModel}.json`
 if (!res) {
-    logError(`ERROR ${id}: missing response:\n${txt}`)
-    fs.writeFileSync(lastLeftPart(path,'.') + `.e.${openAiFromModel(model).replace(/:/g,'-')}.json`, txt, 'UTF-8')
+    if (!txt) {
+        logError(`Failed to get response after ${retry} retries`)
+        process.exit()
+    }
+    logError(`ERROR ${id}: missing response ${retry} retries:\n${txt}`)
+    fs.writeFileSync(errorFileName, txt, 'UTF-8')
     process.exit()
 }
 
@@ -88,14 +104,14 @@ res.request = {
 }
 
 const content = res.choices?.[0]?.message?.content
-const safeModel = model.replace(/:/g,'-')
 if (content) {
     logInfo(`id:${id}, created:${created}, model:${model}, temperature:${temperature}, elapsed_ms:${elapsed_ms}, choices:${res.choices.length}, size:${content.length}`)
     logDebug(content)
     fs.writeFileSync(lastLeftPart(path,'.') + `.a.${safeModel}.json`, JSON.stringify(res, undefined, 2), 'UTF-8')
+    fs.rmSync(errorFileName, { force:true })
 } else {
     logError(`ERROR ${id}: missing response:\n${JSON.stringify(res, undefined, 2)}`)
-    fs.writeFileSync(lastLeftPart(path,'.') + `.e.${safeModel}.json`, JSON.stringify(res, undefined, 2), 'UTF-8')
+    fs.writeFileSync(errorFileName, JSON.stringify(res, undefined, 2), 'UTF-8')
 }
 logDebug(`\n=== END RESPONSE ${id} in ${elapsed_ms}ms ===\n\n`)
 // Explicitly exit to avoid hanging
