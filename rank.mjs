@@ -65,9 +65,9 @@ try {
         let model = lastRightPart(file, '.a.')
         model = lastLeftPart(model, '.')
         const answerJson = fs.readFileSync(path.join(path.dirname(questionPath), file), 'utf-8')
-        if (answerJson == null || answerJson.length === 0) {
+        if (answerJson == null || answerJson.trim().length === 0) {
             logError(`Empty answer file: ${file}`)
-            return { model, content: '' }
+            return null
         }
         const answer = openAiResponse(answerJson)
         if (!answer) {
@@ -76,7 +76,7 @@ try {
             return null
         }
         return { model, content: answer.choices[0].message.content }
-    }).filter(x => x)
+    }).filter(x => x?.content)
 
     const answerMap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').slice(0, answers.length)
     answers.forEach((answer, index) => {
