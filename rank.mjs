@@ -65,13 +65,18 @@ try {
         let model = lastRightPart(file, '.a.')
         model = lastLeftPart(model, '.')
         const answerJson = fs.readFileSync(path.join(path.dirname(questionPath), file), 'utf-8')
-        if(answerJson == null || answerJson.length === 0) {
+        if (answerJson == null || answerJson.length === 0) {
             logError(`Empty answer file: ${file}`)
-            return { model: model, content: '' }
+            return { model, content: '' }
         }
         const answer = openAiResponse(answerJson)
-        return { model: model, content: answer.choices[0].message.content }
-    })
+        if (!answer) {
+            logError(`Invalid answer file: ${file}`)
+            logError(answerJson)
+            return null
+        }
+        return { model, content: answer.choices[0].message.content }
+    }).filter(x => x)
 
     const answerMap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').slice(0, answers.length)
     answers.forEach((answer, index) => {
