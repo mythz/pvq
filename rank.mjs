@@ -16,6 +16,10 @@ if (!fs.existsSync(questionPath)) {
 
 const { logInfo, logDebug, logError } = useLogging()
 
+console.logInfo("--- DEPRECATED ---")
+console.logInfo("This script is deprecated, use rank-answer.mjs instead.")
+console.logInfo("--- DEPRECATED ---")
+
 console.log("Starting...")
 
 const questionJson = fs.readFileSync(questionPath, 'utf-8')
