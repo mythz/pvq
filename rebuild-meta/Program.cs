@@ -5,15 +5,16 @@ using ServiceStack.OrmLite;
 
 // Check if running as debug or not
 
-var isDebug =  Debugger.IsAttached;
+var isDebug = Debugger.IsAttached;
 var workingDir = Directory.GetCurrentDirectory();
 var workingDirInfo = new DirectoryInfo(workingDir);
 Console.WriteLine($"Working from {workingDirInfo.FullName}");
-if(workingDirInfo.FullName.Contains("bin/Debug"))
+if (workingDirInfo.FullName.Contains("bin/Debug"))
 {
     Console.WriteLine("Running from debug folder, setting isDebug to true");
     isDebug = true;
 }
+
 var basePath = isDebug ? "../../../../questions" : "../questions";
 // var baseDataPath = isDebug ? "../../../../data" : "../data";
 
@@ -76,7 +77,6 @@ if (duplicateStatTotals.Count > 0)
     {
         Console.WriteLine($"Duplicate Id: {duplicate.Key}");
     }
-    
 }
 
 if (duplicateStatTotals.Count > 0)
@@ -93,12 +93,14 @@ Console.WriteLine($"Inserted {allStatTotals.Count} StatTotals records");
 foreach (var meta in allMeta)
 {
     var paddedId = meta.Id.ToString("000000000");
-    var metaPath = Path.Combine(basePath, paddedId.Substring(0, 3), paddedId.Substring(3, 3), $"{paddedId.Substring(6,3)}.meta.json");
+    var metaPath = Path.Combine(basePath, paddedId.Substring(0, 3), paddedId.Substring(3, 3),
+        $"{paddedId.Substring(6, 3)}.meta.json");
     // Delete the file if it exists
     if (File.Exists(metaPath))
     {
         File.Delete(metaPath);
     }
+
     await File.WriteAllTextAsync(metaPath, Regenerate.ToJson(meta));
     Console.WriteLine($"Wrote {metaPath}");
 }

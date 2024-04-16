@@ -1,13 +1,8 @@
-using System.Data;
-using System.Text.Json.Serialization;
 using ServiceStack;
 using ServiceStack.DataAnnotations;
-using ServiceStack.OrmLite;
-using ServiceStack.OrmLite.Legacy;
 using ServiceStack.Text;
 
 namespace meta;
-
 
 public static class Regenerate
 {
@@ -17,17 +12,16 @@ public static class Regenerate
     };
 
     public static string ToJson<T>(T obj) => System.Text.Json.JsonSerializer.Serialize(obj, SystemJsonOptions);
-    static T FromJson<T>(this string json) => System.Text.Json.JsonSerializer.Deserialize<T>(json, SystemJsonOptions);
-    
-    
-    public static async Task<Meta?> RegenerateMeta(this DirectoryInfo baseDir,Post post)
+    static T FromJson<T>(this string json) => System.Text.Json.JsonSerializer.Deserialize<T>(json, SystemJsonOptions)!;
+
+    public static async Task<Meta?> RegenerateMeta(this DirectoryInfo baseDir, Post post)
     {
         var now = DateTime.Now;
         var path = post.Id.ToString("000000000");
-        var dir = Path.Combine($"{baseDir}", path.Substring(0,3), path.Substring(3,3));
+        var dir = Path.Combine($"{baseDir}", path.Substring(0, 3), path.Substring(3, 3));
         // Count all .h and .a files for this post
         var filePrefix = path.Substring(6, 3);
-        var metaFile = Path.Join(baseDir.FullName,$"{filePrefix}.meta.json");
+        var metaFile = Path.Join(baseDir.FullName, $"{filePrefix}.meta.json");
         var postId = $"{post.Id}";
 
         Meta meta;
@@ -42,32 +36,32 @@ public static class Regenerate
                 Console.WriteLine($"Error reading {metaFile}: {e.Message}");
                 throw;
             }
-            
         }
         else
         {
-            meta = new() {};
+            meta = new() { };
         }
-        
+
         var answerFiles = Directory.GetFiles(Path.Join(baseDir.FullName), $"{filePrefix}.a.*").ToList();
         var humanAnswerFiles = Directory.GetFiles(Path.Join(baseDir.FullName), $"{filePrefix}.h.*").ToList();
         answerFiles.AddRange(humanAnswerFiles);
-        
+
         foreach (var answerFile in answerFiles)
         {
             var model = answerFile.GetAnswerUserName(filePrefix);
-            if(model == "undefined") continue;
+            if (model == "undefined") continue;
             if (!meta.ModelVotes.ContainsKey(model))
                 meta.ModelVotes[model] = ModelScores.GetValueOrDefault(model, 0);
         }
+
         if (meta.Id == default)
             meta.Id = post.Id;
         meta.ModifiedDate = now;
-        
+
         // Read in the `.v.` (votes) file for this post
         var votesFile = Path.Join(baseDir.FullName, $"{filePrefix}.v.json");
         var modelVotesExists = File.Exists(votesFile);
-        var modelVote = new Vote { ModelVotes = new Dictionary<string, double>()};
+        var modelVote = new Vote { ModelVotes = new() };
         try
         {
             if (modelVotesExists)
@@ -78,56 +72,12 @@ public static class Regenerate
         }
         catch (Exception e)
         {
-            Console.WriteLine($"Error reading votes file {votesFile} : {e.Message} \nSkipping...");
-            return null;
-        } 
-        
-        // Read *.reasons.* files to find matching model votes
-        // Validate votes match before incorporating reason text into meta
-        var reasonsFiles = Directory.GetFiles(Path.Join(baseDir.FullName), $"{filePrefix}.reasons.*").ToList();
-        foreach (var reasonsFile in reasonsFiles)
-        {
-            var reasons = await File.ReadAllTextAsync(reasonsFile);
-            if (reasons.IsEmpty())
-            {
-                Console.WriteLine($"Empty reasons file {reasonsFile}");
-                continue;
-            }
-            
-            var dictReasons = reasons.FromJson<Dictionary<string, VoteReason>>();
-            // Validate reasons match votes
-            if (dictReasons.Count != modelVote.ModelVotes.Count)
-            {
-                Console.WriteLine($"Mismatched reasons count for number of votes in {reasonsFile}");
-                continue;
-            }
-            
-            foreach (var (key, value) in dictReasons)
-            {
-                if (!modelVote.ModelVotes.ContainsKey(key))
-                {
-                    Console.WriteLine($"Model {key} not found in {votesFile}");
-                    continue;
-                }
-                if (modelVote.ModelReasons.ContainsKey(key))
-                {
-                    Console.WriteLine($"Model {key} already has reasons in {votesFile}");
-                    continue;
-                }
-                
-                var vote = modelVote.ModelVotes[key];
-                var score = value.Score;
-                if (Math.Abs(vote - score) > 0.1)
-                {
-                    Console.WriteLine($"Mismatched score for {key} in {votesFile}");
-                    continue;
-                }
-                
-                modelVote.ModelReasons[key] = value.Reason;
-            }
-            
+            Console.WriteLine($"Error reading votes file {votesFile} : {e.Message}\n...");
         }
-            
+
+        meta.ModelVotes = modelVote.ModelVotes;
+        meta.ModelReasons = modelVote.ModelReasons;
+        meta.GradedBy = modelVote.GradedBy;
 
         // Question
         var liveStats = new List<StatTotals>
@@ -141,11 +91,10 @@ public static class Regenerate
                 StartingUpVotes = post.Score,
                 UpVotes = 0,
                 DownVotes = 0,
-                CreatedBy = null
+                CreatedBy = "stackoverflow"
             },
         };
-        
-        
+
         foreach (var vote in modelVote.ModelVotes)
         {
             var answerId = postId + "-" + vote.Key;
@@ -155,7 +104,7 @@ public static class Regenerate
                 PostId = post.Id,
                 UpVotes = 0,
                 DownVotes = 0,
-                StartingUpVotes = (int)Math.Round(vote.Value,0),
+                StartingUpVotes = vote.Value,
                 CreatedBy = vote.Key
             };
             liveStats.Add(answerStats);
@@ -164,26 +113,26 @@ public static class Regenerate
         meta.StatTotals = liveStats;
         meta.ModelVotes = modelVote.ModelVotes;
         meta.ModelReasons = modelVote.ModelReasons;
-        
+
         return meta;
     }
-    
+
     private static string GetAnswerUserName(this string answerFileName, string fileId)
     {
-        var modelName = answerFileName.Contains(".a.") ? answerFileName.RightPart(fileId + ".a.").SplitOnLast('.')[0]
+        var modelName = answerFileName.Contains(".a.")
+            ? answerFileName.RightPart(fileId + ".a.").SplitOnLast('.')[0]
             : answerFileName.RightPart(fileId + ".h.").SplitOnLast('.')[0];
         modelName = ModelUserNameFixes.GetValueOrDefault(modelName, modelName);
         return modelName;
     }
 
-    public static Dictionary<string, string> ModelUserNameFixes { get; } =
-        new()
-        {
-            {"deepseek-coder-6.7b","deepseek-coder"},
-            {"deepseek-coder-6","deepseek-coder"},
+    public static Dictionary<string, string> ModelUserNameFixes { get; } = new()
+    {
+        { "deepseek-coder-6.7b", "deepseek-coder" },
+        { "deepseek-coder-6", "deepseek-coder" },
+    };
 
-        };
-    public static Dictionary<string,int> ModelScores = new()
+    public static Dictionary<string, int> ModelScores = new()
     {
         ["phi"] = 1, //2.7B
         ["gemma:2b"] = 2,
@@ -191,7 +140,6 @@ public static class Regenerate
         ["codellama"] = 4, //7B
         ["gemma"] = 5, //7B
         ["deepseek-coder:6.7b"] = 5, //6.7B
-        ["deepseek-coder:6"] = 5, //TODO Remove once data is clean, some 6.7b models are saved as 6 due to finding the first decimal
         ["deepseek-coder:33b"] = 6, //33B
         ["mistral"] = 7, //7B
         ["mixtral"] = 8, //47B
@@ -202,8 +150,14 @@ public static class Regenerate
 
 public class Vote
 {
-    public Dictionary<string, double> ModelVotes { get; set; } = [];
+    // Model (UserName) => Votes
+    public Dictionary<string, int> ModelVotes { get; set; } = [];
+
+    // Model (UserName) => Vote Reason
     public Dictionary<string, string> ModelReasons { get; set; } = [];
+
+    // "gradedBy": { "mixtral": ["1000-mistral","1000-gemma",..] }
+    public Dictionary<string, Dictionary<string, List<string>>> GradedBy { get; set; } = [];
 }
 
 public class VoteReason
@@ -218,29 +172,25 @@ public class VoteReason
 public class StatTotals
 {
     // PostId (Question) or PostId-UserName (Answer)
-    [PrimaryKey]
-    public required string Id { get; set; }
-    
-    [Index]
-    public int PostId { get; set; }
-    
+    [PrimaryKey] public required string Id { get; set; }
+
+    [Index] public int PostId { get; set; }
+
     public int FavoriteCount { get; set; }
-    
+
     // post.ViewCount + Sum(PostView.PostId)
     public int ViewCount { get; set; }
-    
+
     // Sum(Vote(PostId).Score > 0) 
     public int UpVotes { get; set; }
-    
+
     // Sum(Vote(PostId).Score < 0) 
     public int DownVotes { get; set; }
-    
+
     // post.Score || Meta.ModelVotes[PostId] (Model Ranking Score)
     public int StartingUpVotes { get; set; }
 
-    [Index]
-    [StringLength(128)]
-    public string? CreatedBy { get; set; }
+    [Index] [StringLength(128)] public string? CreatedBy { get; set; }
 
     public int GetScore() => StartingUpVotes + UpVotes - DownVotes;
 
@@ -252,12 +202,15 @@ public class StatTotals
             if (ReferenceEquals(x, null)) return false;
             if (ReferenceEquals(y, null)) return false;
             if (x.GetType() != y.GetType()) return false;
-            return x.Id == y.Id && x.PostId == y.PostId && x.FavoriteCount == y.FavoriteCount && x.ViewCount == y.ViewCount && x.UpVotes == y.UpVotes && x.DownVotes == y.DownVotes && x.StartingUpVotes == y.StartingUpVotes;
+            return x.Id == y.Id && x.PostId == y.PostId && x.FavoriteCount == y.FavoriteCount &&
+                   x.ViewCount == y.ViewCount && x.UpVotes == y.UpVotes && x.DownVotes == y.DownVotes &&
+                   x.StartingUpVotes == y.StartingUpVotes;
         }
 
         public int GetHashCode(StatTotals obj)
         {
-            return HashCode.Combine(obj.Id, obj.PostId, obj.FavoriteCount, obj.ViewCount, obj.UpVotes, obj.DownVotes, obj.StartingUpVotes);
+            return HashCode.Combine(obj.Id, obj.PostId, obj.FavoriteCount, obj.ViewCount, obj.UpVotes, obj.DownVotes,
+                obj.StartingUpVotes);
         }
     }
 
@@ -265,19 +218,29 @@ public class StatTotals
 
     public bool Matches(StatTotals? other)
     {
-        return other == null || UpVotes != other.UpVotes || DownVotes != other.DownVotes || StartingUpVotes != other.DownVotes;
+        return other == null || UpVotes != other.UpVotes || DownVotes != other.DownVotes ||
+               StartingUpVotes != other.DownVotes;
     }
 }
 
+// AnswerId = `{PostId}-{UserName}`
+// RefId = PostId | AnswerId
 public class Meta
 {
     // PostId
     public int Id { get; set; }
 
-    // ModelName => Votes
-    public Dictionary<string, double> ModelVotes { get; set; } = [];
+    // Model (UserName) => Votes
+    public Dictionary<string, int> ModelVotes { get; set; } = [];
 
+    // Model (UserName) => Vote Reason
     public Dictionary<string, string> ModelReasons { get; set; } = [];
+
+    // "gradedBy": { "mixtral": ["1000-mistral","1000-gemma",..] }
+    public Dictionary<string, Dictionary<string, List<string>>> GradedBy { get; set; } = [];
+
+    // RefId => Comments
+    public Dictionary<string, List<Comment>> Comments { get; set; } = [];
 
     // Question + Answer Stats Totals
     public List<StatTotals> StatTotals { get; set; } = [];
@@ -285,12 +248,21 @@ public class Meta
     public DateTime ModifiedDate { get; set; }
 }
 
+public class Comment
+{
+    public string Body { get; set; }
+    public long Created { get; set; } //timestamp ms 
+    public string CreatedBy { get; set; }
+    public int? UpVotes { get; set; }
+    public int? Reports { get; set; }
+}
+
 [Alias("post")]
 public class Post
 {
     public int Id { get; set; }
 
-    public int PostTypeId { get; set; }
+    [Required] public int PostTypeId { get; set; }
 
     public int? AcceptedAnswerId { get; set; }
 
@@ -319,21 +291,21 @@ public class Post
     public string Slug { get; set; }
 
     public string Summary { get; set; }
-    
+
     public DateTime? RankDate { get; set; }
-    
+
     public int? AnswerCount { get; set; }
 
     public string? CreatedBy { get; set; }
-    
+
     public string? ModifiedBy { get; set; }
-    
+
     public string? RefId { get; set; }
 
     public string? Body { get; set; }
 
     public string? ModifiedReason { get; set; }
-    
+
     public DateTime? LockedDate { get; set; }
 
     public string? LockedReason { get; set; }
