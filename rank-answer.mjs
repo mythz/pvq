@@ -215,7 +215,7 @@ while (retry++ <= 10) {
 
 const responseContent = txt.length > 0 && res?.choices?.length > 0 && res.choices[0].message?.content
 if (!responseContent) {
-    logError(`Empty response from model: ${model}`)
+    logError(`Empty response from ${answerId}`)
     process.exit()
 }
 
