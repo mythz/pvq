@@ -72,6 +72,7 @@ function processDir(dir) {
 
         console.log(`${fileCount++}: writing ${vFile} with ${Object.keys(reasonsObj).join(',')} models...`)
         // if (fileCount > 40) process.exit()
+        fs.mkdirSync(metaDir, { recursive: true })
         fs.writeFileSync(vFile, JSON.stringify(vObj, null, 2))
     })
     subDirs.forEach(subDir => processDir(path.join(dir,subDir)))
