@@ -213,12 +213,11 @@ while (retry++ <= 10) {
     await sleep(sleepMs)
 }
 
-if (txt.length === 0) {
+const responseContent = txt.length > 0 && res?.choices?.length > 0 && res.choices[0].message?.content
+if (!responseContent) {
     logError(`Empty response from model: ${model}`)
     process.exit()
 }
-
-const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
 
 // Extract the JSON from the text using regex
 let structuredReasons = responseContent.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
