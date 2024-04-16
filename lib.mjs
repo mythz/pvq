@@ -409,7 +409,6 @@ export function groqRateLimiting(txt) {
     } else {
         console.log("No match found.");
     }
-    console.log('Waiting for', waitTime, 'ms')
     return { found, waitTime };
 }
 
@@ -543,4 +542,12 @@ export function formatTime(ms) {
         fmt = `${totalDays} day${s} ` + fmt
     }
     return fmt
+}
+
+export function emptyVFile() {
+    return ({
+        modelVotes: { },
+        modelReasons: { },
+        gradedBy: { },
+    })
 }

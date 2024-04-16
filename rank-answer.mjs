@@ -9,7 +9,9 @@ import {
     lastLeftPart,
     lastRightPart,
     openAiResponse,
-    openAiFromModel, groqRateLimiting
+    openAiFromModel,
+    groqRateLimiting,
+    emptyVFile,
 } from "./lib.mjs"
 
 let answerPath = process.argv[2]
@@ -38,10 +40,16 @@ const metaDir = path.join(scriptDir, 'meta')
 // Join scriptDir with './questions' to get the questions directory
 const questionsDir = path.join(scriptDir, 'questions')
 
-console.log("Starting...")
 const answerJson = fs.readFileSync(answerPath, 'utf-8')
 const answer = JSON.parse(answerJson)
+
+// Guard against failing if question file of answer doesn't exist
 const questionPath = lastLeftPart(answerPath, '.a.') + '.json'
+if (!fs.existsSync(questionPath)) {
+    console.log(`question file does not exist: ${questionPath}`)
+    process.exit()
+}
+
 const questionJson = fs.readFileSync(questionPath, 'utf-8')
 const question = JSON.parse(questionJson)
 const idDetails = idParts(question.id)
@@ -61,13 +69,16 @@ if (!fs.existsSync(metaDir2)) {
 }
 
 // Get model listed in answer file path
-let answerModel = lastRightPart(lastLeftPart(answerPath, '.'), '.')
+let answerModel = lastLeftPart(lastRightPart(answerPath, '/').substring('000.a.'.length), '.')
+const answerId = `${id}-${answerModel}`
 
 // Map the model to the consistent username
 answerModel = openAiFromModel(answerModel)
 model = openAiFromModel(model)
 
-const outVotesPath = path.join(metaDir2, `${idDetails.fileId}.v.json`)
+const votesFile = `${idDetails.fileId}.v.json`
+const outVotesPath = path.join(metaDir2, votesFile)
+const votesRelativePath = path.join('meta', idDetails.dir1, idDetails.dir2, votesFile)
 // const outReasonsPath = path.join(metaDir2, `${idDetails.fileId}.reasons.${model}.json`)
 // const outValidationPath = path.join(metaDir2, `${idDetails.fileId}.validation.${answerModel}.${model}.json`)
 
@@ -93,10 +104,10 @@ let currentVotesJson = JSON.parse(currentVotes) ?? {}
 // Check if the answer has already been ranked
 let alreadyVoted = currentVotesJson.gradedBy != null &&
     currentVotesJson.gradedBy.length > 0 &&
-    currentVotesJson.gradedBy.includes(`${id}-${answerModel}`)
+    currentVotesJson.gradedBy.includes(answerId)
 
 if (alreadyVoted) {
-    console.log(`Already voted on ${id}-${answerModel}`)
+    console.log(`Already graded ${answerId} in ${votesRelativePath}`)
     process.exit()
 }
 
@@ -104,99 +115,109 @@ alreadyVoted = currentVotesJson.modelVotes != null && currentVotesJson.modelVote
     currentVotesJson.modelReasons != null && currentVotesJson.modelReasons[answerModel] != null;
 
 if (alreadyVoted) {
-    console.log(`Skipping as has vote and reason present.`)
+    console.log(`Skipping existing answer ${answerId} in ${votesRelativePath}`)
     process.exit()
 }
 
-let systemPrompt = { "role":"system", "content":"You are an AI assistant that votes on the quality and relevance of answers to a given question. Before giving votes, give an critique of each answer based on quality and relevance." }
+let systemPrompt = { "role": "system", "content": "You are an AI assistant that votes on the quality and relevance of answers to a given question. Before giving votes, give an critique of each answer based on quality and relevance." }
 
 let r = null
 let startTime = performance.now()
-let content = null;
-try {
 
-    content = `Below I have a user question and an answer to the user question. I want you to give a score out of 10 based on the quality in relation to the original user question. 
+let content = `Below I have a user question and an answer to the user question. I want you to give a score out of 10 based on the quality in relation to the original user question. 
     
-    ## Original User Question
-    
-    Title: ${question.title}
-    Body:
-    ${question.body}
-    Tags: ${question.tags.join(', ')}
-    ---
-    
-    Critique the below answer to justify your score, providing a brief explanation before returning the simple JSON object showing your score with your reasoning. Make sure you write out your explanation before voting.
-    
-    Think about the answer given in relation to the original user question. Use the tags to help you understand the context of the question.
-    
-    ## Answer Attempt
-    
-    ${answerContent}
-    ---
-    
-    Now review and score the answer above out of 10.`
-    content += `
-    
-    Concisely articulate what a good answer needs to contain and how the answer provided does or does not meet those criteria.
-    
-    - If the answer has mistakes or does not address all the question details, score it between 0-2. 
-    - If the answer is correct, but could be improved, score it between 3-6. 
-    - If the answer is correct and provides a good explanation, score it between 7-9.
-    - If the answer is perfect and provides a clear and concise explanation, score it 10. 
-    
-    If in your reason to discover a mistake, adjust your JSON output score to reflect the mistake.
-    Because these are coding questions, mistakes in the code are critical and should be scored lower. Look closely at the syntax and logic of the code for any mistakes. Missing mistakes in reviews leads to a failed review, and many answers are not correct.
-    
-    At the end of your response, return all your votes in a single JSON object in the following format:
-    
-    ${JSON.stringify(expectedReasonsSchema,null,4)}
-    
-    You must include a reason and vote for the answer provided, missing either will result in a failed review.
-    You must include the JSON version of your vote and concise reason.
-    Do not repeat the question or answer in your response.
-    Do not try to fix the answer, only critique it.
-    `
+## Original User Question
 
-    logDebug(`=== REQUEST ${id} ===`)
-    logDebug(`${id}, ${answerPath}`)
-    logDebug(`=== END REQUEST ${id} ===\n\n`)
+Title: ${question.title}
+Body:
+${question.body}
+Tags: ${question.tags.join(', ')}
+---
 
-    let reqOptions = { content, model, port, systemPrompt, temperature, maxTokens }
-    r = await openAi(reqOptions)
-} catch (e) {
-    logError(`Failed:`, e.message)
-    const errorPath = path.join(metaDir2, `${idDetails.fileId}.e.${model}.json`)
-    fs.writeFileSync(errorPath, JSON.stringify({ id, error: e.message, stacktrace: e.stacktrace }, null, 4))
-    process.exit()
-}
-let endTime = performance.now()
-let elapsed_ms = parseInt(endTime - startTime)
+Critique the below answer to justify your score, providing a brief explanation before returning the simple JSON object showing your score with your reasoning. Make sure you write out your explanation before voting.
 
-logDebug(`=== RESPONSE ${id} in ${elapsed_ms}ms ===\n`)
-const txt = await r.text()
+Think about the answer given in relation to the original user question. Use the tags to help you understand the context of the question.
+
+## Answer Attempt
+
+${answerContent}
+---
+
+Now review and score the answer above out of 10.`
+content += `
+
+Concisely articulate what a good answer needs to contain and how the answer provided does or does not meet those criteria.
+
+- If the answer has mistakes or does not address all the question details, score it between 0-2. 
+- If the answer is correct, but could be improved, score it between 3-6. 
+- If the answer is correct and provides a good explanation, score it between 7-9.
+- If the answer is perfect and provides a clear and concise explanation, score it 10. 
+
+If in your reason to discover a mistake, adjust your JSON output score to reflect the mistake.
+Because these are coding questions, mistakes in the code are critical and should be scored lower. Look closely at the syntax and logic of the code for any mistakes. Missing mistakes in reviews leads to a failed review, and many answers are not correct.
+
+At the end of your response, return all your votes in a single JSON object in the following format:
+
+${JSON.stringify(expectedReasonsSchema, null, 4)}
+
+You must include a reason and vote for the answer provided, missing either will result in a failed review.
+You must include the JSON version of your vote and concise reason.
+Do not repeat the question or answer in your response.
+Do not try to fix the answer, only critique it.
+`
+
+logDebug(`=== REQUEST ${id} ===`)
+logDebug(`${id}, ${answerPath}`)
+logDebug(`=== END REQUEST ${id} ===\n\n`)
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+let retry = 0
+let elapsed_ms = 0
+let txt = null
+let res = null
 const created = new Date().toISOString()
+const errorPath = path.join(metaDir2, `${idDetails.fileId}.e.${model}.json`)
 
-if (!r.ok) {
-    console.log(`${r.status} openAi request failed: ${txt}`)
-    if (r.status === 429) {
-        console.log('Rate limited.')
-        // Try handle GROQ rate limiting, if not found, defaults to 1000ms
-        let rateLimit = groqRateLimiting(txt);
-        if(rateLimit.found) {
-            await new Promise(resolve => setTimeout(resolve, rateLimit.waitTime))
-            process.exit()
+while (retry++ <= 10) {
+    let startTime = performance.now()
+    let sleepMs = 1000 * retry
+    try {
+        let reqOptions = { content, model, port, systemPrompt, temperature, maxTokens }
+        r = await openAi(reqOptions)
+        let endTime = performance.now()
+        elapsed_ms = parseInt(endTime - startTime)
+
+        logDebug(`=== RESPONSE ${id} in ${elapsed_ms}ms ===\n`)
+        txt = await r.text()
+        
+        if (!r.ok) {
+            console.log(`${r.status} openAi request ${retry + 1} failed: ${txt}`)
+            if (r.status === 429) {
+                console.log('Rate limited.')
+                // Try handle GROQ rate limiting, if not found, defaults to 1000ms
+                let rateLimit = groqRateLimiting(txt);
+                if (rateLimit.found)
+                    sleepMs = rateLimit.waitTime
+            }
+        } else {
+            res = openAiResponse(txt, model)
         }
+        if (res) break        
+    } catch (e) {
+        logError(`Failed:`, e.message)
+        fs.writeFileSync(errorPath, JSON.stringify({ id, error: e.message, stacktrace: e.stacktrace }, null, 4))
+        process.exit()
     }
-    process.exit(1)
+    console.log(`retrying in ${sleepMs}ms...`)
+    await sleep(sleepMs)
 }
 
-if(txt.length === 0) {
-    logError(`Empty response from model: ${model}`)
+const responseContent = txt.length > 0 && res?.choices?.length > 0 && res.choices[0].message?.content
+if (!responseContent) {
+    logError(`Empty response from ${answerId}`)
     process.exit()
 }
-
-const res = openAiResponse(txt, model)
-const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
 
 // Extract the JSON from the text using regex
 let structuredReasons = responseContent.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
@@ -212,19 +233,24 @@ if (!isValid) {
 }
 
 // Read current v.json
-let votes = { modelVotes: {}}
-if (fs.existsSync(outVotesPath)) {
-    votes = JSON.parse(fs.readFileSync(outVotesPath, 'utf-8'))
+let votes = { modelVotes: {} }
+try {
+    if (fs.existsSync(outVotesPath)) {
+        votes = JSON.parse(fs.readFileSync(outVotesPath, 'utf-8'))
+    }
+} catch (e) {
+    logError(`Failed to read votes file: ${outVotesPath}`, e)
+    fs.writeFileSync(outVotesPath, JSON.stringify(emptyVFile(), null, 4))
 }
 
 logDebug(`JSON found ${structuredReasons.length}`)
-logDebug(`=== STRUCTURED REASONS ===`)
+logDebug(`=== STRUCTURED REASONS for ${answerId} ===`)
 logDebug(structuredReasons[0])
-logDebug('=== END STRUCTURED REASONS ===\n\n')
+logDebug(`=== END STRUCTURED REASONS for ${answerPath} in ${parseInt(performance.now() - startTime)}ms ===\n\n`)
 
 let voteResult = JSON.parse(structuredReasons[0])
 if (voteResult.score == null || voteResult.reason == null) {
-    logError(`Invalid vote result: ${structuredReasons[0]}`)
+    logError(`Invalid vote result for ${answerPath}: ${structuredReasons[0]}`)
     process.exit()
 }
 

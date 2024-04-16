@@ -6,7 +6,7 @@
 
 import fs from "fs"
 import path from "path"
-import { openAiFromModel, leftPart, rightPart } from "./lib.mjs"
+import { openAiFromModel, emptyVFile, leftPart, rightPart } from "./lib.mjs"
 
 const dir = process.argv[2]
 
@@ -16,14 +16,6 @@ if (!dir || !fs.existsSync(dir)) {
 }
 
 let fileCount = 0
-
-function emptyVFile() {
-    return ({
-        modelVotes: { },
-        modelReasons: { },
-        gradedBy: { },
-    })
-}
 
 /** 000.reasons.mixtral.json
 {

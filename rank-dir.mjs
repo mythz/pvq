@@ -59,8 +59,12 @@ function processDir(dir) {
         // If the votes result file doesn't already exist, process, otherwise skip
         // Get Id from file name
         console.log(`${fileCount++}: ./rank-answer.mjs ${path.join(dir,file)} ${rankingModel} ${port}`)
-        const r = execSync(`./rank-answer.mjs ${path.join(dir,file)} ${rankingModel} ${port}`).toString()
-        console.log(r)
+        try {
+            const r = execSync(`./rank-answer.mjs ${path.join(dir,file)} ${rankingModel} ${port}`).toString()
+            console.log(r)
+        } catch(e) {
+            console.log(`failed to process ${path.join(dir,file)}:`, e)
+        }
     })
     subDirs.forEach(subDir => processDir(path.join(dir,subDir)))
 }
