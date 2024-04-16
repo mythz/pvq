@@ -396,7 +396,6 @@ export function groqRateLimiting(txt) {
     } else {
         console.log("No match found.");
     }
-    console.log('Waiting for', waitTime, 'ms')
     return { found, waitTime };
 }
 
