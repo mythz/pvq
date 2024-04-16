@@ -9,7 +9,7 @@ import {
     lastLeftPart,
     lastRightPart,
     openAiResponse,
-    openAiFromModel
+    openAiFromModel, groqRateLimiting
 } from "./lib.mjs"
 
 let answerPath = process.argv[2]
@@ -177,10 +177,16 @@ const txt = await r.text()
 const created = new Date().toISOString()
 
 if (!r.ok) {
-    console.log(`${r.status} request failed: ${txt}`)
-    // Create error file in meta dir
-    const errorPath = path.join(metaDir2, `${idDetails.fileId}.e.${model}.json`)
-    fs.writeFileSync(errorPath, JSON.stringify({ id, created, error: txt }, null, 4))
+    console.log(`${r.status} openAi request failed: ${txt}`)
+    if (r.status === 429) {
+        console.log('Rate limited.')
+        // Try handle GROQ rate limiting, if not found, defaults to 1000ms
+        let rateLimit = groqRateLimiting(txt);
+        if(rateLimit.found) {
+            await new Promise(resolve => setTimeout(resolve, rateLimit.waitTime))
+            process.exit()
+        }
+    }
     process.exit(1)
 }
 
