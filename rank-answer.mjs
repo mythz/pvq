@@ -161,8 +161,9 @@ try {
     let reqOptions = { content, model, port, systemPrompt, temperature, maxTokens }
     r = await openAi(reqOptions)
 } catch (e) {
-    console.log(e)
-    logError(`Failed:`, e)
+    logError(`Failed:`, e.message)
+    const errorPath = path.join(metaDir2, `${idDetails.fileId}.e.${model}.json`)
+    fs.writeFileSync(errorPath, JSON.stringify({ id, error: e.message, stacktrace: e.stacktrace }, null, 4))
     process.exit()
 }
 let endTime = performance.now()
@@ -174,6 +175,9 @@ const created = new Date().toISOString()
 
 if (!r.ok) {
     console.log(`${r.status} request failed: ${txt}`)
+    // Create error file in meta dir
+    const errorPath = path.join(metaDir2, `${idDetails.fileId}.e.${model}.json`)
+    fs.writeFileSync(errorPath, JSON.stringify({ id, created, error: txt }, null, 4))
     process.exit(1)
 }
 
