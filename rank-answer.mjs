@@ -41,7 +41,7 @@ const questionJson = fs.readFileSync(questionPath, 'utf-8')
 const question = JSON.parse(questionJson)
 const idDetails = idParts(question.id)
 const id = question.id
-console.log(id)
+const answerContent = answer.choices[0].message.content
 
 // Ensure meta dir1 exists
 const metaDir1 = path.join(metaDir, idDetails.dir1)
@@ -62,20 +62,16 @@ let answerModel = lastRightPart(lastLeftPart(answerPath, '.'), '.')
 answerModel = openAiFromModel(answerModel)
 model = openAiFromModel(model)
 
-const outVotesPath = path.join(metaDir2, `${idDetails.fileId}.v.${answerModel}.${model}.json`)
-const outReasonsPath = path.join(metaDir2, `${idDetails.fileId}.reasons.${answerModel}.${model}.json`)
+const outVotesPath = path.join(metaDir2, `${idDetails.fileId}.v.json`)
+const outReasonsPath = path.join(metaDir2, `${idDetails.fileId}.reasons.${model}.json`)
 const outValidationPath = path.join(metaDir2, `${idDetails.fileId}.validation.${answerModel}.${model}.json`)
 
 const { openAi } = useClient()
 const maxTokens = 1024
 const temperature = 0.1
 const expectedReasonsSchema = {
-    "score": {
-        "type": "integer"
-    },
-    "reason": {
-        "type": "string"
-    }
+    "score": 1,
+    "reason": "Your reason goes here. Above score is only an example."
 }
 
 let systemPrompt = { "role":"system", "content":"You are an AI assistant that votes on the quality and relevance of answers to a given question. Before giving votes, give an critique of each answer based on quality and relevance." }
@@ -87,63 +83,44 @@ try {
 
     content = `Below I have a user question and an answer to the user question. I want you to give a score out of 10 based on the quality in relation to the original user question. 
     
-    ## Example Response 1
-    
-    Here is my review of the answer, I will hold off on providing the scores until the end:
-
-    Review: The answer is well written and provides a clear and concise explanation. The examples given are relevant and help to illustrate the points made. The answer addresses the question and provides examples of code in the same language as the question.    
-    My score for this answer is 9.
-    
-    Here is the JSON object of my score:
-    { 
-      "score": 9,
-      "reason": "The answer is well written and provides a clear and concise explanation. The examples given are relevant and help to illustrate the points made. The answer addresses the question and provides examples of code in the same language as the question."
-    }
-    END OF EXAMPLE 1
-    
-    ## Example Response 2
-    
-    Here is my review of the answer, I will hold off on providing the scores until the end:
-    
-    Review: The answer addresses the question but lacks clarity and conciseness. The information provided is accurate but the explanation is not clear. The examples given are relevant but could be improved. The answer does not provide examples of code in the same language as the question.
-    My score for this answer is 4.
-    
-    Here is the JSON object of my score:
-    { 
-      "score": 4,
-      "reason": "The answer addresses the question but lacks clarity and conciseness. The information provided is accurate but the explanation is not clear. The examples given are relevant but could be improved. The answer does not provide examples of code in the same language as the question."
-    }
-    END OF EXAMPLE 2
-    
-    ---
-    
     ## Original User Question
     
     Title: ${question.title}
     Body:
     ${question.body}
     Tags: ${question.tags.join(', ')}
+    ---
     
     Critique the below answer to justify your score, providing a brief explanation before returning the simple JSON object showing your score with your reasoning. Make sure you write out your explanation before voting.
     
-    Answer:
-    ${answer.content}
+    Think about the answer given in relation to the original user question. Use the tags to help you understand the context of the question.
+    
+    ## Answer Attempt
+    
+    ${answerContent}
     ---
     
-    Now review and score the answer above out of 10. Here is your criteria, be harsh but fair in your review, consider the following when scoring the answers:
-    
-    - Accurate information (this is the most important), ensure you think about the correctness of the information provided
-    - Clear and concise explanation
-    - Good examples
-    - Addresses the question
-    - Examples of code or pseudocode in the same language as the question`
+    Now review and score the answer above out of 10.`
     content += `
+    
+    Concisely articulate what a good answer needs to contain and how the answer provided does or does not meet those criteria.
+    
+    - If the answer has mistakes or does not address all the question details, score it between 0-2. 
+    - If the answer is correct, but could be improved, score it between 3-6. 
+    - If the answer is correct and provides a good explanation, score it between 7-9.
+    - If the answer is perfect and provides a clear and concise explanation, score it 10. 
+    
+    If in your reason to discover a mistake, adjust your JSON output score to reflect the mistake.
+    Because these are coding questions, mistakes in the code are critical and should be scored lower. Look closely at the syntax and logic of the code for any mistakes. Missing mistakes in reviews leads to a failed review, and many answers are not correct.
     
     At the end of your response, return all your votes in a single JSON object in the following format:
     
     ${JSON.stringify(expectedReasonsSchema,null,4)}
     
     You must include a reason and vote for the answer provided, missing either will result in a failed review.
+    You must include the JSON version of your vote and concise reason.
+    Do not repeat the question or answer in your response.
+    Do not try to fix the answer, only critique it.
     `
 
     logDebug(`=== REQUEST ${id} ===`)
@@ -151,7 +128,6 @@ try {
     logDebug(`=== END REQUEST ${id} ===\n\n`)
 
     let reqOptions = { content, model, port, systemPrompt, temperature, maxTokens }
-    console.log(JSON.stringify(reqOptions, null, 4))
     r = await openAi(reqOptions)
 } catch (e) {
     console.log(e)
@@ -191,13 +167,32 @@ if (!isValid) {
     process.exit()
 }
 
-fs.writeFileSync(outValidationPath, JSON.stringify({response: res, created, model, rawScores: structuredReasons[0]}))
-let votes = JSON.parse(structuredReasons[0])
-fs.writeFileSync(outReasonsPath, JSON.stringify(votes, null, 4))
+// Read current v.json
+let votes = { modeVotes: {}}
+if (fs.existsSync(outVotesPath)) {
+    votes = JSON.parse(fs.readFileSync(outVotesPath, 'utf-8'))
+}
 
-// Convert to votes structure
-const vote = { [model]: votes.score }
-fs.writeFileSync(outVotesPath, JSON.stringify(vote, null, 4))
+logDebug(`JSON found ${structuredReasons.length}`)
+logDebug(`=== STRUCTURED REASONS ===`)
+logDebug(structuredReasons[0])
+logDebug('=== END STRUCTURED REASONS ===\n\n')
+
+fs.writeFileSync(outValidationPath, JSON.stringify({response: res, created, model, rawScores: structuredReasons[0]}))
+let newVotes = JSON.parse(structuredReasons[0])
+// Merge in new votes
+votes.modelVotes[answerModel] = newVotes.score
+fs.writeFileSync(outVotesPath, JSON.stringify(votes, null, 4))
+
+// Merge in new reasons
+let reasons = {}
+if (fs.existsSync(outReasonsPath)) {
+    reasons = JSON.parse(fs.readFileSync(outReasonsPath, 'utf-8'))
+}
+reasons[answerModel] = newVotes
+
+// Write updated reasons
+fs.writeFileSync(outReasonsPath, JSON.stringify(reasons, null, 4))
 
 // Done
 logDebug(`Wrote ${outVotesPath}`)
