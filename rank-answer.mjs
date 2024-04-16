@@ -78,6 +78,7 @@ model = openAiFromModel(model)
 
 const votesFile = `${idDetails.fileId}.v.json`
 const outVotesPath = path.join(metaDir2, votesFile)
+const votesRelativePath = path.join('meta', idDetails.dir1, idDetails.dir2, votesFile)
 // const outReasonsPath = path.join(metaDir2, `${idDetails.fileId}.reasons.${model}.json`)
 // const outValidationPath = path.join(metaDir2, `${idDetails.fileId}.validation.${answerModel}.${model}.json`)
 
@@ -106,7 +107,7 @@ let alreadyVoted = currentVotesJson.gradedBy != null &&
     currentVotesJson.gradedBy.includes(answerId)
 
 if (alreadyVoted) {
-    console.log(`Already graded ${answerId} in ${votesFile}`)
+    console.log(`Already graded ${answerId} in ${votesRelativePath}`)
     process.exit()
 }
 
@@ -114,7 +115,7 @@ alreadyVoted = currentVotesJson.modelVotes != null && currentVotesJson.modelVote
     currentVotesJson.modelReasons != null && currentVotesJson.modelReasons[answerModel] != null;
 
 if (alreadyVoted) {
-    console.log(`Skipping existing answer ${answerId} in ${votesFile}`)
+    console.log(`Skipping existing answer ${answerId} in ${votesRelativePath}`)
     process.exit()
 }
 
