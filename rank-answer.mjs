@@ -9,7 +9,9 @@ import {
     lastLeftPart,
     lastRightPart,
     openAiResponse,
-    openAiFromModel, groqRateLimiting
+    openAiFromModel,
+    groqRateLimiting,
+    emptyVFile,
 } from "./lib.mjs"
 
 let answerPath = process.argv[2]
@@ -41,7 +43,14 @@ const questionsDir = path.join(scriptDir, 'questions')
 console.log("Starting...")
 const answerJson = fs.readFileSync(answerPath, 'utf-8')
 const answer = JSON.parse(answerJson)
+
+// Guard against failing if question file of answer doesn't exist
 const questionPath = lastLeftPart(answerPath, '.a.') + '.json'
+if (!fs.existsSync(questionPath)) {
+    console.log(`question file does not exist: ${questionPath}`)
+    process.exit()
+}
+
 const questionJson = fs.readFileSync(questionPath, 'utf-8')
 const question = JSON.parse(questionJson)
 const idDetails = idParts(question.id)
@@ -108,7 +117,7 @@ if (alreadyVoted) {
     process.exit()
 }
 
-let systemPrompt = { "role":"system", "content":"You are an AI assistant that votes on the quality and relevance of answers to a given question. Before giving votes, give an critique of each answer based on quality and relevance." }
+let systemPrompt = { "role": "system", "content": "You are an AI assistant that votes on the quality and relevance of answers to a given question. Before giving votes, give an critique of each answer based on quality and relevance." }
 
 let r = null
 let startTime = performance.now()
@@ -149,7 +158,7 @@ try {
     
     At the end of your response, return all your votes in a single JSON object in the following format:
     
-    ${JSON.stringify(expectedReasonsSchema,null,4)}
+    ${JSON.stringify(expectedReasonsSchema, null, 4)}
     
     You must include a reason and vote for the answer provided, missing either will result in a failed review.
     You must include the JSON version of your vote and concise reason.
@@ -182,7 +191,7 @@ if (!r.ok) {
         console.log('Rate limited.')
         // Try handle GROQ rate limiting, if not found, defaults to 1000ms
         let rateLimit = groqRateLimiting(txt);
-        if(rateLimit.found) {
+        if (rateLimit.found) {
             await new Promise(resolve => setTimeout(resolve, rateLimit.waitTime))
             process.exit()
         }
@@ -190,7 +199,7 @@ if (!r.ok) {
     process.exit(1)
 }
 
-if(txt.length === 0) {
+if (txt.length === 0) {
     logError(`Empty response from model: ${model}`)
     process.exit()
 }
@@ -212,9 +221,14 @@ if (!isValid) {
 }
 
 // Read current v.json
-let votes = { modelVotes: {}}
-if (fs.existsSync(outVotesPath)) {
-    votes = JSON.parse(fs.readFileSync(outVotesPath, 'utf-8'))
+let votes = { modelVotes: {} }
+try {
+    if (fs.existsSync(outVotesPath)) {
+        votes = JSON.parse(fs.readFileSync(outVotesPath, 'utf-8'))
+    }
+} catch (e) {
+    logError(`Failed to read votes file: ${outVotesPath}`, e)
+    fs.writeFileSync(outVotesPath, JSON.stringify(emptyVFile(), null, 4))
 }
 
 logDebug(`JSON found ${structuredReasons.length}`)

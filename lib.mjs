@@ -531,3 +531,11 @@ export function formatTime(ms) {
     }
     return fmt
 }
+
+export function emptyVFile() {
+    return ({
+        modelVotes: { },
+        modelReasons: { },
+        gradedBy: { },
+    })
+}
