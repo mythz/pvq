@@ -12,6 +12,7 @@ data/*.db
 r2-data/
 .env
 dist/
+meta/
 
 # User-specific files
 *.rsuser
