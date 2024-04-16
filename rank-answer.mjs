@@ -8,7 +8,8 @@ import {
     idParts,
     lastLeftPart,
     lastRightPart,
-    openAiResponse
+    openAiResponse,
+    openAiFromModel
 } from "./lib.mjs"
 
 let answerPath = process.argv[2]
@@ -34,14 +35,17 @@ const questionsDir = path.join(scriptDir, 'questions')
 console.log("Starting...")
 const answerJson = fs.readFileSync(answerPath, 'utf-8')
 const answer = JSON.parse(answerJson)
-const questionPath = lastRightPart(lastLeftPart(answerPath, '.'), '/') + '.json'
+const questionPath = lastLeftPart(answerPath, '.a.') + '.json'
+console.log(questionPath)
 const questionJson = fs.readFileSync(questionPath, 'utf-8')
 const question = JSON.parse(questionJson)
-const id = idParts(question.Id)
+const idDetails = idParts(question.id)
+const id = question.id
+console.log(id)
 
 // Ensure meta dir1 exists
-const metaDir1 = path.join(metaDir, id.dir1)
-const metaDir2 = path.join(metaDir1, id.dir2)
+const metaDir1 = path.join(metaDir, idDetails.dir1)
+const metaDir2 = path.join(metaDir1, idDetails.dir2)
 if (!fs.existsSync(metaDir1)) {
     fs.mkdirSync(metaDir1)
     fs.mkdirSync(metaDir2)
@@ -51,9 +55,16 @@ if (!fs.existsSync(metaDir2)) {
     fs.mkdirSync(metaDir2)
 }
 
-const outVotesPath = path.join(metaDir2, `${id.fileId}.v.${model}.json`)
-const outReasonsPath = path.join(metaDir2, `${id.fileId}.reasons.${model}.json`)
-const outValidationPath = path.join(metaDir2, `${id.fileId}.validation.${model}.json`)
+// Get model listed in answer file path
+let answerModel = lastRightPart(lastLeftPart(answerPath, '.'), '.')
+
+// Map the model to the consistent username
+answerModel = openAiFromModel(answerModel)
+model = openAiFromModel(model)
+
+const outVotesPath = path.join(metaDir2, `${idDetails.fileId}.v.${answerModel}.${model}.json`)
+const outReasonsPath = path.join(metaDir2, `${idDetails.fileId}.reasons.${answerModel}.${model}.json`)
+const outValidationPath = path.join(metaDir2, `${idDetails.fileId}.validation.${answerModel}.${model}.json`)
 
 const { openAi } = useClient()
 const maxTokens = 1024
@@ -139,7 +150,9 @@ try {
     logDebug(`${id}, ${questionPath}`)
     logDebug(`=== END REQUEST ${id} ===\n\n`)
 
-    r = await openAi({ content, model, port, systemPrompt, temperature, maxTokens })
+    let reqOptions = { content, model, port, systemPrompt, temperature, maxTokens }
+    console.log(JSON.stringify(reqOptions, null, 4))
+    r = await openAi(reqOptions)
 } catch (e) {
     console.log(e)
     logError(`Failed:`, e)
@@ -151,6 +164,16 @@ let elapsed_ms = parseInt(endTime - startTime)
 logDebug(`=== RESPONSE ${id} in ${elapsed_ms}ms ===\n`)
 const txt = await r.text()
 const created = new Date().toISOString()
+
+if (!r.ok) {
+    console.log(`${r.status} request failed: ${txt}`)
+    process.exit(1)
+}
+
+if(txt.length === 0) {
+    logError(`Empty response from model: ${model}`)
+    process.exit()
+}
 
 const res = openAiResponse(txt, model)
 const responseContent = res?.choices?.length > 0 && res.choices[0].message?.content
