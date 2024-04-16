@@ -46,16 +46,18 @@ export function openAiApiKey(model) {
                         : null
 }
 
+// Converts API model names to their model usernames in pvq.app
 export function openAiFromModel(model) {
     const mapping = {
+        'claude-3-haiku-20240307':  'claude3-haiku',
+        'claude-3-sonnet-20240229': 'claude3-sonnet',
+        'claude-3-opus-20240229':   'claude3-opus',
+        'deepseek-coder-6.7b':      'deepseek-coder',
         'mixtral-8x7b-32768':       'mixtral',
-        'open-mixtral-8x7b':        'mixtral',
         'gemma-7b-it':              'gemma',
-        'gpt-4-turbo-preview':      'gpt-4-turbo',
-        'gpt-4-0125-preview':       'gpt-4-turbo',
-        'claude-3-haiku-20240307':  'claude-3-haiku',
-        'claude-3-sonnet-20240229': 'claude-3-sonnet',
-        'claude-3-opus-20240229':   'claude-3-opus',
+        'gpt-4-turbo-preview':      'gpt4-turbo',
+        'gpt-4-0125-preview':       'gpt4-turbo',
+        'open-mixtral-8x7b':        'mixtral',
     }
     return mapping[model] ?? model
 }
