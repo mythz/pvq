@@ -16,9 +16,10 @@ if (workingDirInfo.FullName.Contains("bin/Debug"))
 }
 
 var basePath = isDebug ? "../../../../questions" : "../questions";
+var distPath = basePath.LastLeftPart('/') + "/dist";
 // var baseDataPath = isDebug ? "../../../../data" : "../data";
 
-var appDbPathDir = new DirectoryInfo($"{basePath}/app.db");
+var appDbPathDir = new DirectoryInfo($"{distPath}/app.db");
 var appDbPath = appDbPathDir.FullName;
 
 Console.WriteLine($"Loading app.db from {appDbPath}");
@@ -93,13 +94,9 @@ Console.WriteLine($"Inserted {allStatTotals.Count} StatTotals records");
 foreach (var meta in allMeta)
 {
     var paddedId = meta.Id.ToString("000000000");
-    var metaPath = Path.Combine(basePath, paddedId.Substring(0, 3), paddedId.Substring(3, 3),
-        $"{paddedId.Substring(6, 3)}.meta.json");
-    // Delete the file if it exists
-    if (File.Exists(metaPath))
-    {
-        File.Delete(metaPath);
-    }
+    var questionDir = Path.Combine(basePath, paddedId.Substring(0, 3), paddedId.Substring(3, 3));
+    questionDir.AssertDir();
+    var metaPath = Path.Combine(questionDir, $"{paddedId.Substring(6, 3)}.meta.json");
 
     await File.WriteAllTextAsync(metaPath, Regenerate.ToJson(meta));
     Console.WriteLine($"Wrote {metaPath}");

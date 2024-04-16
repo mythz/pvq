@@ -8,8 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="ServiceStack.OrmLite.Sqlite" Version="8.2.2" />
-      <PackageReference Include="ServiceStack.Text" Version="8.2.2" />
+      <PackageReference Include="ServiceStack.OrmLite.Sqlite.Data" Version="8.*" />
+      <PackageReference Include="ServiceStack.Text" Version="8.*" />
     </ItemGroup>
 
 </Project>

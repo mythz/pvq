@@ -46,20 +46,13 @@ public static class Regenerate
         var humanAnswerFiles = Directory.GetFiles(Path.Join(baseDir.FullName), $"{filePrefix}.h.*").ToList();
         answerFiles.AddRange(humanAnswerFiles);
 
-        foreach (var answerFile in answerFiles)
-        {
-            var model = answerFile.GetAnswerUserName(filePrefix);
-            if (model == "undefined") continue;
-            if (!meta.ModelVotes.ContainsKey(model))
-                meta.ModelVotes[model] = ModelScores.GetValueOrDefault(model, 0);
-        }
-
         if (meta.Id == default)
             meta.Id = post.Id;
         meta.ModifiedDate = now;
 
         // Read in the `.v.` (votes) file for this post
-        var votesFile = Path.Join(baseDir.FullName, $"{filePrefix}.v.json");
+        var metaPath = baseDir.FullName.Replace("/questions/", "/meta/");
+        var votesFile = Path.Join(metaPath, $"{filePrefix}.v.json");
         var modelVotesExists = File.Exists(votesFile);
         var modelVote = new Vote { ModelVotes = new() };
         try
