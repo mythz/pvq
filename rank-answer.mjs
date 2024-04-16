@@ -69,7 +69,7 @@ if (!fs.existsSync(metaDir2)) {
 }
 
 // Get model listed in answer file path
-let answerModel = lastRightPart(lastLeftPart(answerPath, '.'), '.')
+let answerModel = lastLeftPart(lastRightPart(answerPath, '/').substring('000.a.'.length), '.')
 const answerId = `${id}-${answerModel}`
 
 // Map the model to the consistent username
