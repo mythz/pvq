@@ -51,6 +51,7 @@ function processDir(dir) {
         const vFile = path.join(metaDir, `${postIdSuffix}.v.json`)
 
         const vObj = emptyVFile()
+        fs.mkdirSync(metaDir, { recursive: true })
 
         if (!fs.existsSync(reasonsFile)) {
             console.log(`regenerating missing: ${vFile}...`)
