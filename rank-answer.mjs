@@ -22,6 +22,12 @@ if (!fs.existsSync(answerPath)) {
     process.exit()
 }
 
+// Ensure answer file
+if (answerPath.indexOf('.a.') === -1) {
+    console.log(`file is not an answer file: ${answerPath}`)
+    process.exit()
+}
+
 const { logInfo, logDebug, logError } = useLogging()
 
 // Check path of running script
@@ -36,7 +42,6 @@ console.log("Starting...")
 const answerJson = fs.readFileSync(answerPath, 'utf-8')
 const answer = JSON.parse(answerJson)
 const questionPath = lastLeftPart(answerPath, '.a.') + '.json'
-console.log(questionPath)
 const questionJson = fs.readFileSync(questionPath, 'utf-8')
 const question = JSON.parse(questionJson)
 const idDetails = idParts(question.id)
@@ -63,8 +68,8 @@ answerModel = openAiFromModel(answerModel)
 model = openAiFromModel(model)
 
 const outVotesPath = path.join(metaDir2, `${idDetails.fileId}.v.json`)
-const outReasonsPath = path.join(metaDir2, `${idDetails.fileId}.reasons.${model}.json`)
-const outValidationPath = path.join(metaDir2, `${idDetails.fileId}.validation.${answerModel}.${model}.json`)
+// const outReasonsPath = path.join(metaDir2, `${idDetails.fileId}.reasons.${model}.json`)
+// const outValidationPath = path.join(metaDir2, `${idDetails.fileId}.validation.${answerModel}.${model}.json`)
 
 const { openAi } = useClient()
 const maxTokens = 1024
@@ -72,6 +77,32 @@ const temperature = 0.1
 const expectedReasonsSchema = {
     "score": 1,
     "reason": "Your reason goes here. Above score is only an example."
+}
+
+// Read v.json in meta dir
+// Find answers that haven't been ranked in v.json
+// Include their question and answer in the request
+// Write the updated v.json to include `modelVotes` key val pair, `modelReasons` key val pair, and `gradedBy` string array <questionId>-<modelusername>
+
+let currentVotes = fs.readFileSync(outVotesPath, 'utf-8')
+let currentVotesJson = JSON.parse(currentVotes)
+
+// Check if the answer has already been ranked
+let alreadyVoted = currentVotesJson.gradedBy != null &&
+    currentVotesJson.gradedBy.length > 0 &&
+    currentVotesJson.gradedBy.includes(`${id}-${answerModel}`)
+
+if (alreadyVoted) {
+    console.log(`Already voted on ${id}-${answerModel}`)
+    process.exit()
+}
+
+alreadyVoted = currentVotesJson.modelVotes != null && currentVotesJson.modelVotes[answerModel] != null &&
+    currentVotesJson.modelReasons != null && currentVotesJson.modelReasons[answerModel] != null;
+
+if (alreadyVoted) {
+    console.log(`Skipping as has vote and reason present.`)
+    process.exit()
 }
 
 let systemPrompt = { "role":"system", "content":"You are an AI assistant that votes on the quality and relevance of answers to a given question. Before giving votes, give an critique of each answer based on quality and relevance." }
@@ -124,7 +155,7 @@ try {
     `
 
     logDebug(`=== REQUEST ${id} ===`)
-    logDebug(`${id}, ${questionPath}`)
+    logDebug(`${id}, ${answerPath}`)
     logDebug(`=== END REQUEST ${id} ===\n\n`)
 
     let reqOptions = { content, model, port, systemPrompt, temperature, maxTokens }
@@ -178,24 +209,28 @@ logDebug(`=== STRUCTURED REASONS ===`)
 logDebug(structuredReasons[0])
 logDebug('=== END STRUCTURED REASONS ===\n\n')
 
-fs.writeFileSync(outValidationPath, JSON.stringify({response: res, created, model, rawScores: structuredReasons[0]}))
-let newVotes = JSON.parse(structuredReasons[0])
-// Merge in new votes
-votes.modelVotes[answerModel] = newVotes.score
-fs.writeFileSync(outVotesPath, JSON.stringify(votes, null, 4))
-
-// Merge in new reasons
-let reasons = {}
-if (fs.existsSync(outReasonsPath)) {
-    reasons = JSON.parse(fs.readFileSync(outReasonsPath, 'utf-8'))
+let voteResult = JSON.parse(structuredReasons[0])
+if (voteResult.score == null || voteResult.reason == null) {
+    logError(`Invalid vote result: ${structuredReasons[0]}`)
+    process.exit()
 }
-reasons[answerModel] = newVotes
 
-// Write updated reasons
-fs.writeFileSync(outReasonsPath, JSON.stringify(reasons, null, 4))
+// Update votes.modelVotes
+votes.modelVotes = votes.modelVotes ?? {}
+votes.modelVotes[answerModel] = voteResult.score
+votes.modelReasons = votes.modelReasons ?? {}
+votes.modelReasons[answerModel] = voteResult.reason
 
+let safeModel = openAiFromModel(model)
+// Update votes.gradedBy
+let initGradedBy = {}
+initGradedBy[safeModel] = []
+votes.gradedBy = votes.gradedBy ?? {}
+votes.gradedBy[safeModel] = votes.gradedBy[safeModel] ?? initGradedBy[safeModel]
+votes.gradedBy[safeModel].push(`${id}-${answerModel}`)
+
+// Write updated votes to v.json
+fs.writeFileSync(outVotesPath, JSON.stringify(votes, null, 4))
 // Done
 logDebug(`Wrote ${outVotesPath}`)
-logDebug(`Wrote ${outReasonsPath}`)
-logDebug(`Wrote ${outValidationPath}`)
 process.exit(0)
