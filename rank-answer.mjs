@@ -234,13 +234,13 @@ try {
 }
 
 logDebug(`JSON found ${structuredReasons.length}`)
-logDebug(`=== STRUCTURED REASONS ===`)
+logDebug(`=== STRUCTURED REASONS for ${answerId} ===`)
 logDebug(structuredReasons[0])
-logDebug('=== END STRUCTURED REASONS ===\n\n')
+logDebug(`=== END STRUCTURED REASONS for ${answerPath} in ${parseInt(performance.now() - startTime)}ms ===\n\n`)
 
 let voteResult = JSON.parse(structuredReasons[0])
 if (voteResult.score == null || voteResult.reason == null) {
-    logError(`Invalid vote result: ${structuredReasons[0]}`)
+    logError(`Invalid vote result for ${answerPath}: ${structuredReasons[0]}`)
     process.exit()
 }
 
