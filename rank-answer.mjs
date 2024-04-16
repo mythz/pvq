@@ -206,7 +206,7 @@ if (!isValid) {
 }
 
 // Read current v.json
-let votes = { modeVotes: {}}
+let votes = { modelVotes: {}}
 if (fs.existsSync(outVotesPath)) {
     votes = JSON.parse(fs.readFileSync(outVotesPath, 'utf-8'))
 }
