@@ -84,8 +84,11 @@ const expectedReasonsSchema = {
 // Include their question and answer in the request
 // Write the updated v.json to include `modelVotes` key val pair, `modelReasons` key val pair, and `gradedBy` string array <questionId>-<modelusername>
 
-let currentVotes = fs.readFileSync(outVotesPath, 'utf-8')
-let currentVotesJson = JSON.parse(currentVotes)
+let currentVotes = null
+if (fs.existsSync(outVotesPath)) {
+    currentVotes = fs.readFileSync(outVotesPath, 'utf-8')
+}
+let currentVotesJson = JSON.parse(currentVotes) ?? {}
 
 // Check if the answer has already been ranked
 let alreadyVoted = currentVotesJson.gradedBy != null &&
