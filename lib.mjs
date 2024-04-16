@@ -62,6 +62,19 @@ export function openAiFromModel(model) {
     return mapping[model] ?? model
 }
 
+export function extractIdFromPath(path) {
+    // remove 'questions' or 'meta' prefix
+    let idPath = path.replace('questions/', '').replace('meta/', '')
+    // remove '.json' suffix
+    idPath = idPath.replace('.json', '')
+    // Truncate string by splitting on last . and taking the first part
+    idPath = leftPart(idPath, '.')
+    // remove any remaining slashes
+    idPath = idPath.replaceAll('/', '')
+    // parse the id as an integer
+    return parseInt(idPath)
+}
+
 export function openAiModel(model) {
     let provider = ModelProviders[model]
     // console.log('provider', provider, model, ModelProviders)

@@ -3,7 +3,7 @@
 import fs from "fs"
 import path from "path"
 import { execSync } from "child_process"
-import {idParts, lastLeftPart, lastRightPart, leftPart, openAiFromModel} from "./lib.mjs";
+import {extractIdFromPath, idParts, lastLeftPart, lastRightPart, leftPart, openAiFromModel} from "./lib.mjs";
 
 const dir = process.argv[2]
 let rankingModel = process.argv[3]
@@ -27,12 +27,12 @@ function processDir(dir) {
     const answerFiles = files.filter(x => x.indexOf(`.a.`) > -1)
     let candidates = answerFiles.filter(answerFile => {
         // Grab Id from file name
-        const id = leftPart(answerFile, '.')
+        const id = extractIdFromPath(path.join(dir,answerFile))
         let modelName = lastLeftPart(lastRightPart(answerFile, '.a.'),'.')
         let idDirParts = idParts(id)
         let answerModel = openAiFromModel(modelName)
         // Check if the votes file exists
-        const votesFile = path.join(idDirParts.metaDir,`${id}.v.json`)
+        const votesFile = path.join(idDirParts.metaDir,`${idDirParts.fileId}.v.json`)
         let votesExist = fs.existsSync(votesFile)
         if (!votesExist)
             return true
