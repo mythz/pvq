@@ -40,7 +40,6 @@ const metaDir = path.join(scriptDir, 'meta')
 // Join scriptDir with './questions' to get the questions directory
 const questionsDir = path.join(scriptDir, 'questions')
 
-console.log("Starting...")
 const answerJson = fs.readFileSync(answerPath, 'utf-8')
 const answer = JSON.parse(answerJson)
 
@@ -71,12 +70,14 @@ if (!fs.existsSync(metaDir2)) {
 
 // Get model listed in answer file path
 let answerModel = lastRightPart(lastLeftPart(answerPath, '.'), '.')
+const answerId = `${id}-${answerModel}`
 
 // Map the model to the consistent username
 answerModel = openAiFromModel(answerModel)
 model = openAiFromModel(model)
 
-const outVotesPath = path.join(metaDir2, `${idDetails.fileId}.v.json`)
+const votesFile = `${idDetails.fileId}.v.json`
+const outVotesPath = path.join(metaDir2, votesFile)
 // const outReasonsPath = path.join(metaDir2, `${idDetails.fileId}.reasons.${model}.json`)
 // const outValidationPath = path.join(metaDir2, `${idDetails.fileId}.validation.${answerModel}.${model}.json`)
 
@@ -102,10 +103,10 @@ let currentVotesJson = JSON.parse(currentVotes) ?? {}
 // Check if the answer has already been ranked
 let alreadyVoted = currentVotesJson.gradedBy != null &&
     currentVotesJson.gradedBy.length > 0 &&
-    currentVotesJson.gradedBy.includes(`${id}-${answerModel}`)
+    currentVotesJson.gradedBy.includes(answerId)
 
 if (alreadyVoted) {
-    console.log(`Already voted on ${id}-${answerModel}`)
+    console.log(`Already graded ${answerId} in ${votesFile}`)
     process.exit()
 }
 
@@ -113,7 +114,7 @@ alreadyVoted = currentVotesJson.modelVotes != null && currentVotesJson.modelVote
     currentVotesJson.modelReasons != null && currentVotesJson.modelReasons[answerModel] != null;
 
 if (alreadyVoted) {
-    console.log(`Skipping as has vote and reason present.`)
+    console.log(`Skipping existing answer ${answerId} in ${votesFile}`)
     process.exit()
 }
 
