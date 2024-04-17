@@ -55,6 +55,7 @@ function processDir(dir) {
             return true
 
         let votesData = JSON.parse(votesJson)
+        let shouldUpdate = false
 
         // First count what has been done if possible
         if (votesData.gradedBy != null && votesData.gradedBy[safeRankingModel] != null && !voteFilesAlreadyProcessed.includes(id)) {
@@ -68,14 +69,30 @@ function processDir(dir) {
                     shouldBeUserName = manualFixes[currentUsername]
                 }
                 if (shouldBeUserName !== currentUsername) {
+                    shouldUpdate = true
                     console.log(`${id}.v.json needs updating from ${currentUsername} to ${shouldBeUserName}`)
-                    votesData.gradedBy[safeRankingModel] = votesData.gradedBy[safeRankingModel].map(x => x.replace(currentUsername, shouldBeUserName))
+                    if (votesData.modelVotes[currentUsername]) {
+                        votesData.modelVotes[shouldBeUserName] = votesData.modelVotes[currentUsername]
+                        delete votesData.modelVotes[currentUsername]
+                    }
+                    if (votesData.modelReasons[currentUsername]) {
+                        votesData.modelReasons[shouldBeUserName] = votesData.modelReasons[currentUsername]
+                        delete votesData.modelReasons[currentUsername]
+                    }
+                    // distinct list of model names
+                    votesData.gradedBy[safeRankingModel] = 
+                        Array.from(new Set(votesData.gradedBy[safeRankingModel].map(x => x.replace(currentUsername, shouldBeUserName))))
                 }
                 uniqueModelNames[currentUsername] = true
-                // Update v.json file
-                //fs.writeFileSync(votesFile, JSON.stringify(votesData, null, 4))
                 voteFilesAlreadyProcessed.push(id)
             })
+        }
+
+        // Update v.json file
+        if (shouldUpdate) {
+            console.log(`Updating ${votesFile}`)
+            // console.log(JSON.stringify(votesData, null, 4))
+            fs.writeFileSync(votesFile, JSON.stringify(votesData, null, 4))
         }
     })
 
