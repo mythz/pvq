@@ -1,14 +1,14 @@
+#!/usr/bin/env node
+
 import fs from "fs"
 import path from "path"
-import { execSync } from "child_process"
 import {
     extractIdFromPath,
     idParts,
     lastLeftPart,
     lastRightPart,
-    leftPart,
-    openAiFromModel, splitOnFirst,
-    splitOnLast
+    splitOnFirst,
+    openAiFromModel,
 } from "./lib.mjs";
 
 const dir = process.argv[2]
