@@ -40,6 +40,8 @@ using var db = dbFactory.Open();
 
 var allPosts = db.Select<Post>();
 
+int errorCount = 0;
+
 // Iterate over all posts and populate the StatTotals using the RegenerateMeta extension method
 List<Meta> allMeta = new();
 foreach (var post in allPosts)
@@ -62,9 +64,14 @@ foreach (var post in allPosts)
     }
     catch (Exception e)
     {
-        Console.WriteLine($"Error processing post {post.Id}: {e.Message}");
-        Console.WriteLine("Skipping...");
+        Console.WriteLine($"Error processing post {post.Id}, skipping...");
+        errorCount++;
     }
+}
+
+if (errorCount > 0)
+{
+    Console.WriteLine($"Errors processing {errorCount} posts, exiting...");
 }
 
 var allStatTotals = allMeta.SelectMany(x => x.StatTotals).ToList();
@@ -86,10 +93,18 @@ if (duplicateStatTotals.Count > 0)
     return;
 }
 
+// Set CreatedBy to 'stackoverflow' for all StatTotals missing CreatedBy
+foreach (var statTotal in allStatTotals.Where(x => x.CreatedBy == null))
+{
+    statTotal.CreatedBy = "stackoverflow";
+}
+
 db.CreateTableIfNotExists<StatTotals>();
 db.InsertAll(allStatTotals);
+
 Console.WriteLine($"Inserted {allStatTotals.Count} StatTotals records");
 
+int updatedMetaCount = 0;
 // Write all meta files to ./questions/???/???/???.meta.json
 foreach (var meta in allMeta)
 {
@@ -99,5 +114,7 @@ foreach (var meta in allMeta)
     var metaPath = Path.Combine(questionDir, $"{paddedId.Substring(6, 3)}.meta.json");
 
     await File.WriteAllTextAsync(metaPath, Regenerate.ToJson(meta));
-    Console.WriteLine($"Wrote {metaPath}");
+    updatedMetaCount++;
 }
+
+Console.WriteLine($"Updated {updatedMetaCount} meta files");
