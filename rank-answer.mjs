@@ -226,6 +226,14 @@ if (structuredReasons == null || structuredReasons.length === 0) {
     process.exit()
 }
 
+// Take first structured reason that contains the string 'score' and 'reason'
+structuredReasons = structuredReasons.filter(x => x.includes('score') && x.includes('reason'))
+
+if (structuredReasons.length === 0) {
+    logError(`No valid structured reasons found in response: ${responseContent}`);
+    process.exit()
+}
+
 const isValid = structuredReasons[0].includes('score') && structuredReasons[0].includes('reason')
 if (!isValid) {
     logError(`Invalid structured reasons found in response: ${responseContent}`);
