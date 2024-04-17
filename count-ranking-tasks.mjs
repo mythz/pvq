@@ -16,6 +16,8 @@ if (!dir || !fs.existsSync(dir)) {
 rankingModel = openAiFromModel(rankingModel)
 
 let fileCount = 0
+
+let modelCountMap = {}
 function processDir(dir) {
     const nodes = fs.readdirSync(dir)
     const files = nodes.filter(x => x.endsWith('.json'))
@@ -47,10 +49,13 @@ function processDir(dir) {
         if (votesData.modelReasons == null || votesData.modelReasons[answerModel] == null)
             return true;
 
-        if (votesData.gradedBy != null && votesData.gradedBy[safeRankingModel] != null && votesData.gradedBy[safeRankingModel].includes(`${id}-${answerModel}`))
-            return false;
-
         return false;
+    })
+
+    candidates.forEach(file => {
+      // Count the number of tasks per model
+        const modelName = lastLeftPart(lastRightPart(file, '.a.'), '.')
+        modelCountMap[modelName] = (modelCountMap[modelName] || 0) + 1
     })
 
     fileCount += candidates.length
@@ -60,3 +65,8 @@ function processDir(dir) {
 processDir(dir)
 
 console.log(`Tasks to rank: ${fileCount}`)
+console.log('Tasks per model:')
+// Print the number of tasks per model
+for (const [key, value] of Object.entries(modelCountMap)) {
+    console.log(`${key}: ${value}`)
+}
