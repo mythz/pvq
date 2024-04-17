@@ -13,9 +13,9 @@ const validNames = [
     'mixtral',
     'gemma',
     'gpt-4-turbo',
-    'claude-3-haiku',
-    'claude-3-sonnet',
-    'claude-3-opus',
+    'claude3-haiku',
+    'claude3-sonnet',
+    'claude3-opus',
     'phi',
     'deepseek-coder',
     'gemma-2b',
@@ -47,7 +47,7 @@ function processDir(dir) {
     candidates.forEach(file => {
         // rename the file if it doesn't match a valid model name
         const modelName = lastLeftPart(lastRightPart(file, '.a.'), '.')
-        let updatedModelName = openAiFromModel(modelName)
+        let updatedModelName = openAiFromModel(modelName).replace(/:/g, '-')
         if(updatedModelName === modelName) {
             return;
         }
