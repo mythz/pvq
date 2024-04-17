@@ -16,8 +16,11 @@ if (!dir || !fs.existsSync(dir)) {
 rankingModel = openAiFromModel(rankingModel)
 
 let fileCount = 0
+let doneCount = 0
 
 let modelCountMap = {}
+let doneModelCountMap = {}
+let idsAlreadyCounted = []
 function processDir(dir) {
     const nodes = fs.readdirSync(dir)
     const files = nodes.filter(x => x.endsWith('.json'))
@@ -43,6 +46,18 @@ function processDir(dir) {
             return true
 
         let votesData = JSON.parse(votesJson)
+
+        // First count what has been done if possible
+        if (votesData.gradedBy != null && votesData.gradedBy[safeRankingModel] != null && !idsAlreadyCounted.includes(id)) {
+            let graded = votesData.gradedBy[safeRankingModel].length;
+            doneCount += graded
+            let doneModels = votesData.gradedBy[safeRankingModel].map(x => x.split('-')[1])
+            doneModels.forEach(model => {
+                doneModelCountMap[model] = (doneModelCountMap[model] || 0) + 1
+            })
+            idsAlreadyCounted.push(id)
+        }
+
         if (votesData.modelVotes == null || votesData.modelVotes[answerModel] == null)
             return true;
 
@@ -68,5 +83,12 @@ console.log(`Tasks to rank: ${fileCount}`)
 console.log('Tasks per model:')
 // Print the number of tasks per model
 for (const [key, value] of Object.entries(modelCountMap)) {
+    console.log(`${key}: ${value}`)
+}
+
+console.log(`Tasks already graded: ${doneCount}`)
+console.log('Tasks per model already graded:')
+// Print the number of tasks per model already graded
+for (const [key, value] of Object.entries(doneModelCountMap)) {
     console.log(`${key}: ${value}`)
 }
