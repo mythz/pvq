@@ -11,8 +11,8 @@ import {
     openAiFromModel,
 } from "./lib.mjs";
 
-const dir = process.argv[2]
-let rankingModel = process.argv[3]
+const dir = process.argv[2] || './questions'
+let rankingModel = process.argv[3] || 'mixtral'
 let port = process.argv[4] ?? '11434'
 if (!rankingModel) throw "model required"
 
