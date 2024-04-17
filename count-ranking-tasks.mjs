@@ -1,7 +1,15 @@
 import fs from "fs"
 import path from "path"
 import { execSync } from "child_process"
-import {extractIdFromPath, idParts, lastLeftPart, lastRightPart, leftPart, openAiFromModel} from "./lib.mjs";
+import {
+    extractIdFromPath,
+    idParts,
+    lastLeftPart,
+    lastRightPart,
+    leftPart,
+    openAiFromModel, splitOnFirst,
+    splitOnLast
+} from "./lib.mjs";
 
 const dir = process.argv[2]
 let rankingModel = process.argv[3]
@@ -51,7 +59,7 @@ function processDir(dir) {
         if (votesData.gradedBy != null && votesData.gradedBy[safeRankingModel] != null && !idsAlreadyCounted.includes(id)) {
             let graded = votesData.gradedBy[safeRankingModel].length;
             doneCount += graded
-            let doneModels = votesData.gradedBy[safeRankingModel].map(x => x.split('-')[1])
+            let doneModels = votesData.gradedBy[safeRankingModel].map(x => splitOnFirst(x, '-')[1])
             doneModels.forEach(model => {
                 doneModelCountMap[model] = (doneModelCountMap[model] || 0) + 1
             })

@@ -149,7 +149,7 @@ Here is the JSON Schema I am expecting for the structured reasons:
     
     The above is the JSON schema, your output must adhere to it. Use the text above about each answer to populate that structure and return it.`
 
-    const id = `${lastRightPart(lastLeftPart(file, '.'), '/')}`.padStart(3, '0')
+    const id = lastLeftPart(lastRightPart(file, '/').substring('000.a.'.length), '.')
     let startTime = performance.now()
     let r = null
     let resJson = null
