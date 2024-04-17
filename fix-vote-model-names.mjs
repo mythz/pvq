@@ -23,6 +23,10 @@ if (!dir || !fs.existsSync(dir)) {
 
 rankingModel = openAiFromModel(rankingModel)
 
+let manualFixes = {
+    '7b': 'deepseek-coder'
+}
+
 let voteFilesAlreadyProcessed = []
 let uniqueModelNames = {}
 
@@ -60,6 +64,9 @@ function processDir(dir) {
             votesData.gradedBy[safeRankingModel].forEach(gradedBy => {
                 let currentUsername = rightPart(gradedBy, '-')
                 let shouldBeUserName = openAiFromModel(currentUsername)
+                if (manualFixes[currentUsername]) {
+                    shouldBeUserName = manualFixes[currentUsername]
+                }
                 if (shouldBeUserName !== currentUsername) {
                     console.log(`${id}.v.json needs updating from ${currentUsername} to ${shouldBeUserName}`)
                     votesData.gradedBy[safeRankingModel] = votesData.gradedBy[safeRankingModel].map(x => x.replace(currentUsername, shouldBeUserName))
