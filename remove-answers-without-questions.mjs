@@ -23,7 +23,7 @@ function processDir(dir, dbIds) {
         if (dirParts.length !== 3) return
         const id = parseInt(`${dirParts[1]}${dirParts[2]}${file.split('.')[0]}`, 10)
         if (id < 100000000 && !dbIds.has(id)) {
-            console.log(`no question file for answer: ${path.join(dir,file)}`)
+            console.log(path.join(dir,file))
         }
     })
     subDirs.forEach(subDir => processDir(path.join(dir,subDir), dbIds))
