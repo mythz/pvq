@@ -29,7 +29,7 @@ function processDir(dir) {
     let candidates = answerFiles.filter(answerFile => {
         // Grab Id from file name
         const id = extractIdFromPath(path.join(dir,answerFile))
-        let modelName = lastLeftPart(lastRightPart(answerFile, '.a.'),'.')
+        let modelName = lastLeftPart(lastRightPart(answerFile, '/').substring('000.a.'.length), '.')
         let idDirParts = idParts(id)
         let answerModel = openAiFromModel(modelName)
         // Check if the votes file exists
