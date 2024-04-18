@@ -223,7 +223,7 @@ let structuredReasons = null;
 
 if(responseContent.trim().startsWith('{')) {
     // Try to extract the JSON from the response, if it's already JSON
-    responseContent = `\n\`\`\`json\n${responseContent}\n\`\`\``
+    responseContent = `\n\`\`\`json\n${responseContent.trim()}\n\`\`\``
 }
 
 structuredReasons = responseContent.match(/(?<=```json\n)\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
