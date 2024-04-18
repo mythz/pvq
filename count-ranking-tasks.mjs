@@ -29,6 +29,8 @@ let doneCount = 0
 let modelCountMap = {}
 let doneModelCountMap = {}
 let idsAlreadyCounted = []
+
+let scoreRankerMap = {}
 function processDir(dir) {
     const nodes = fs.readdirSync(dir)
     const files = nodes.filter(x => x.endsWith('.json'))
@@ -64,6 +66,17 @@ function processDir(dir) {
                 doneModels.forEach(model => {
                     doneModelCountMap[model] = (doneModelCountMap[model] || 0) + 1
                 })
+
+                votesData.gradedBy[m].forEach(gradedBy => {
+                    let model = splitOnFirst(gradedBy, '-')[1]
+                    let score = votesData.modelVotes[model]
+                    if (score == null) return
+                    if(scoreRankerMap[m] == null) scoreRankerMap[m] = {}
+                    if(scoreRankerMap[m][model] == null) scoreRankerMap[m][model] = {}
+                    if(scoreRankerMap[m][model].score == null) scoreRankerMap[m][model].score = 0
+                    scoreRankerMap[m][model].score += score
+                    scoreRankerMap[m][model].count = (scoreRankerMap[m][model].count || 0) + 1
+                })
             }
             idsAlreadyCounted.push(id)
         }
@@ -93,12 +106,26 @@ console.log(`Tasks to rank: ${fileCount}`)
 console.log('Tasks per model:')
 // Print the number of tasks per model
 for (const [key, value] of Object.entries(modelCountMap)) {
-    console.log(`${key}: ${value}`)
+    console.log(`  ${key}: ${value}`)
 }
 
 console.log(`Tasks already graded: ${doneCount}`)
 console.log('Tasks per model already graded:')
 // Print the number of tasks per model already graded
 for (const [key, value] of Object.entries(doneModelCountMap)) {
-    console.log(`${key}: ${value}`)
+    console.log(`  ${key}: ${value}`)
+}
+
+for(let ranker in scoreRankerMap) {
+    for(let model in scoreRankerMap[ranker]) {
+        scoreRankerMap[ranker][model].avg = scoreRankerMap[ranker][model].score / scoreRankerMap[ranker][model].count
+    }
+}
+
+console.log(`Average scores per model:`)
+for (const [ranker, models] of Object.entries(scoreRankerMap)) {
+    console.log(`Ranker: ${ranker}`)
+    for (const [model, score] of Object.entries(models)) {
+        console.log(`  ${model}: ${score.avg.toFixed(2)} (${score.count})`)
+    }
 }
