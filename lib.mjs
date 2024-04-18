@@ -20,32 +20,55 @@ const ProviderApis = {
     'anthropic': apiPath => `https://api.anthropic.com/v1/messages`,
     'google':    apiPath => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
 }
+const ProviderApiKeyVars = {
+    'groq':      'GROQ_API_KEY',
+    'mistral':   'MISTRAL_API_KEY',
+    'openai':    'OPENAI_API_KEY',
+    'google':    'GOOGLE_API_KEY',
+    'anthropic': 'ANTHROPIC_API_KEY',
+    'cohere':    'COHERE_API_KEY',
+}
 
 export function openAiUrl(model,port) {
     let provider = ModelProviders[model]
     const apiPath = '/v1/chat/completions'
-    const fn = ProviderApis[provider]
+    const fn = provider && ProviderApis[provider]
     if (fn) {
         return fn(apiPath)
+    }
+    if (provider) {
+        const url = process.env[`${provider.toUpperCase()}_URL`]
+        if (url) {
+            return url + apiPath
+        }
     }
     return (process.env.OLLAMA_URL == null ? `http://localhost:${port ?? '11434'}` : `${process.env.OLLAMA_URL}`) + `${apiPath}`
 }
 
+let count = 0
+
+// allow rotating between multiple API Keys, separated by ',' in the env var
+function nextApiKey(name) {
+    const apiKeys = process.env[name]
+    if (apiKeys.indexOf(',') === -1) return apiKeys
+
+    const allKeys = apiKeys.split(',')
+    const idx = count++ % allKeys.length
+    const useApiKey = allKeys[idx] || allKeys[0]
+    // console.log(`Using API Key ${name}[${idx}]`, useApiKey)
+    return useApiKey
+}
+
 export function openAiApiKey(model) {
     let provider = ModelProviders[model]
-    return provider === 'groq'
-        ? process.env.GROQ_API_KEY
-        : provider === 'mistral'
-            ? process.env.MISTRAL_API_KEY
-            : provider === 'openai'
-                ? process.env.OPENAI_API_KEY
-                : provider === 'google'
-                    ? new Date().valueOf() % 2 == 0 ? process.env.GOOGLE_API_KEY : (process.env.GOOGLE_API_KEY2 || process.env.GOOGLE_API_KEY)
-                    : provider === 'anthropic'
-                        ? process.env.ANTHROPIC_API_KEY
-                        : provider === 'cohere'
-                            ? process.env.COHERE_API_KEY
-                            : null
+    const keyName = ProviderApiKeyVars[provider]
+    if (!keyName) return null
+
+    if (!process.env[keyName]) {
+        throw new Error(`Missing ${provider} API KEY: ${keyName}`)
+    }
+    const apiKey = nextApiKey(keyName)
+    return apiKey
 }
 
 // Converts API model names to their model usernames in pvq.app
@@ -369,6 +392,10 @@ export function useClient() {
     }
 
     function get(url) { return send(url, "GET") }
+    async function getJson(url) {
+        const r = await get(url)
+        return await r.json()
+    }
     function send(url, method, body) {
         if (url.startsWith('/'))
             url = BASE_URL + url
@@ -392,7 +419,14 @@ export function useClient() {
         }))
     }
 
-    return { auth, get, send, fail, openAi, openAiDefaults, openAiFromModel, openAiResponse, sleep }
+    function baseUrl(url) {
+        if (typeof url == 'string') {
+            BASE_URL = url
+        }
+        return BASE_URL
+    }
+
+    return { auth, get, getJson, send, fail, openAi, openAiDefaults, openAiFromModel, openAiResponse, sleep, baseUrl }
 }
 
 export function useLogging() {
@@ -466,10 +500,12 @@ export function idParts(id) {
     const dir2 = idStr.substring(3,6)
     const fileId = idStr.substring(6)
     const file = fileId + '.json'
-    const questionDir = `./questions/${dir1}/${dir2}`
-    const metaDir = `./meta/${dir1}/${dir2}`
+    const questionDir = `questions/${dir1}/${dir2}`
+    const metaDir = `meta/${dir1}/${dir2}`
     const questionPath = `${questionDir}/${file}`
-    return { dir1, dir2, fileId, file, questionDir, metaDir, questionPath }
+    const metaPath = `${questionDir}/${fileId}.meta.json`
+    const vPath = `${metaDir}/${fileId}.v.json`
+    return { dir1, dir2, fileId, file, questionDir, metaDir, questionPath, metaPath, vPath }
 }
 
 export function sleep(ms) {
