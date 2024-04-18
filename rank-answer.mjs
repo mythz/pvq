@@ -82,7 +82,7 @@ const votesRelativePath = path.join('meta', idDetails.dir1, idDetails.dir2, vote
 // const outValidationPath = path.join(metaDir2, `${idDetails.fileId}.validation.${answerModel}.${model}.json`)
 
 const { openAi } = useClient()
-const maxTokens = 512
+const maxTokens = 1024
 const temperature = 0.1
 const expectedReasonsSchema = {
     "reason": "Your reason goes here. Below score is only an example. Score should reflect the review of the answer.",
