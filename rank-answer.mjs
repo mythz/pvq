@@ -133,7 +133,7 @@ ${question.body}
 Tags: ${question.tags.join(', ')}
 ---
 
-Critique the below answer to justify your score, providing a brief explanation before returning the simple JSON object showing your score with your reasoning. Make sure you write out your explanation before voting.
+Critique the below answer to justify your score, providing a brief explanation before returning the simple JSON object showing your reasoning and score.
 
 Think about the answer given in relation to the original user question. Use the tags to help you understand the context of the question.
 
@@ -152,23 +152,17 @@ Concisely articulate what a good answer needs to contain and how the answer prov
 - If the answer is correct and provides a good explanation, score it between 7-9.
 - If the answer is perfect and provides a clear and concise explanation, score it 10. 
 
-If in your reason to discover a mistake, adjust your JSON output score to reflect the mistake.
 Because these are coding questions, mistakes in the code are critical and should be scored lower. Look closely at the syntax and logic of the code for any mistakes. Missing mistakes in reviews leads to a failed review, and many answers are not correct.
 
-## Notes:
-- You must include a reason and vote for the answer provided, missing either will result in a failed review.
-- You must include the JSON version of your vote and concise reason.
-- Do not repeat the question, code or answer in your response.
-- Do not try to fix the answer, only critique it.
-- You must never include code in your response, except for the JSON format above representing your reason and vote.
+Please provide a JSON object with the following schema:
 
-At the end of your response, return your reason and vote in a single JSON object in the following format (do not forget code fences):
+## Example JSON Response
 
 \`\`\`json
 ${JSON.stringify(expectedReasonsSchema, null, 4)}
 \`\`\`
 
-Remember to never include code, especially braces, brackets, or quotes in your short response, except for the JSON response.
+Use code fences, aka triple backticks, to encapsulate your JSON object.
 `
 
 logDebug(`=== REQUEST ${id} ===`)
