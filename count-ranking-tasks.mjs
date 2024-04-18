@@ -56,13 +56,15 @@ function processDir(dir) {
         let votesData = JSON.parse(votesJson)
 
         // First count what has been done if possible
-        if (votesData.gradedBy != null && votesData.gradedBy[safeRankingModel] != null && !idsAlreadyCounted.includes(id)) {
-            let graded = votesData.gradedBy[safeRankingModel].length;
-            doneCount += graded
-            let doneModels = votesData.gradedBy[safeRankingModel].map(x => splitOnFirst(x, '-')[1])
-            doneModels.forEach(model => {
-                doneModelCountMap[model] = (doneModelCountMap[model] || 0) + 1
-            })
+        if (votesData.gradedBy != null && !idsAlreadyCounted.includes(id)) {
+            for(let m in votesData.gradedBy) {
+                let graded = votesData.gradedBy[m].length;
+                doneCount += graded
+                let doneModels = votesData.gradedBy[m].map(x => splitOnFirst(x, '-')[1])
+                doneModels.forEach(model => {
+                    doneModelCountMap[model] = (doneModelCountMap[model] || 0) + 1
+                })
+            }
             idsAlreadyCounted.push(id)
         }
 
