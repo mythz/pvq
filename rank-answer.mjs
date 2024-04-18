@@ -10,7 +10,6 @@ import {
     lastRightPart,
     openAiResponse,
     openAiFromModel,
-    groqRateLimiting,
     emptyVFile,
 } from "./lib.mjs"
 
@@ -199,11 +198,13 @@ while (retry++ <= 10) {
         if (!r.ok) {
             console.log(`${r.status} openAi request ${retry + 1} failed: ${txt}`)
             if (r.status === 429) {
-                console.log('Rate limited.')
                 // Try handle GROQ rate limiting, if not found, defaults to 1000ms
-                let rateLimit = groqRateLimiting(txt);
-                if (rateLimit.found)
-                    sleepMs = rateLimit.waitTime
+                console.log(`Rate limited, retry-after ${r.headers.get('retry-after')} seconds...`)
+
+                const retryAfter = parseInt(r.headers.get('retry-after'))
+                if (!isNaN(retryAfter)) {
+                    sleepMs = retryAfter * 1000
+                }
             }
         } else {
             res = openAiResponse(txt, model)
