@@ -162,9 +162,11 @@ Because these are coding questions, mistakes in the code are critical and should
 - Do not try to fix the answer, only critique it.
 - You must never include code in your response, except for the JSON format above representing your reason and vote.
 
-At the end of your response, return your reason and vote in a single JSON object in the following format:
+At the end of your response, return your reason and vote in a single JSON object in the following format (do not forget code fences):
 
+\`\`\`json
 ${JSON.stringify(expectedReasonsSchema, null, 4)}
+\`\`\`
 
 Remember to never include code, especially braces, brackets, or quotes in your short response, except for the JSON response.
 `
@@ -223,7 +225,7 @@ if (!responseContent) {
 }
 
 // Extract the JSON from the text using regex
-let structuredReasons = responseContent.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
+let structuredReasons = responseContent.match(/(?<=```json\s*\n)\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
 if (structuredReasons == null || structuredReasons.length === 0) {
     logError(`No structured reasons found in response: ${responseContent}`);
     process.exit()
