@@ -153,7 +153,7 @@ Concisely articulate what a good answer needs to contain and how the answer prov
 
 Because these are coding questions, mistakes in the code are critical and should be scored lower. Look closely at the syntax and logic of the code for any mistakes. Missing mistakes in reviews leads to a failed review, and many answers are not correct.
 
-Please provide a JSON object with the following schema:
+You MUST provide a JSON object with the following schema:
 
 ## Example JSON Response
 
@@ -213,14 +213,21 @@ while (retry++ <= 10) {
     await sleep(sleepMs)
 }
 
-const responseContent = txt.length > 0 && res?.choices?.length > 0 && res.choices[0].message?.content
+let responseContent = txt.length > 0 && res?.choices?.length > 0 && res.choices[0].message?.content
 if (!responseContent) {
     logError(`Empty response from ${answerId}`)
     process.exit()
 }
 
-// Extract the JSON from the text using regex
-let structuredReasons = responseContent.match(/(?<=```json\s*\n)\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
+let structuredReasons = null;
+
+if(responseContent.trim().startsWith('{')) {
+    // Try to extract the JSON from the response, if it's already JSON
+    responseContent = `\n\n\n\`\`\`json\n${responseContent}\n\`\`\``
+}
+
+structuredReasons = responseContent.match(/(?<=```json\s*\n)\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
+
 if (structuredReasons == null || structuredReasons.length === 0) {
     logError(`No structured reasons found in response: ${responseContent}`);
     process.exit()
