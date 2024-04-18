@@ -126,6 +126,6 @@ console.log(`Average scores per model:`)
 for (const [ranker, models] of Object.entries(scoreRankerMap)) {
     console.log(`Ranker: ${ranker}`)
     for (const [model, score] of Object.entries(models)) {
-        console.log(`  ${model}: ${score.avg.toFixed(2)}`)
+        console.log(`  ${model}: ${score.avg.toFixed(2)} (${score.count})`)
     }
 }
