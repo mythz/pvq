@@ -155,15 +155,18 @@ Concisely articulate what a good answer needs to contain and how the answer prov
 If in your reason to discover a mistake, adjust your JSON output score to reflect the mistake.
 Because these are coding questions, mistakes in the code are critical and should be scored lower. Look closely at the syntax and logic of the code for any mistakes. Missing mistakes in reviews leads to a failed review, and many answers are not correct.
 
-At the end of your response, return all your votes in a single JSON object in the following format:
+## Notes:
+- You must include a reason and vote for the answer provided, missing either will result in a failed review.
+- You must include the JSON version of your vote and concise reason.
+- Do not repeat the question, code or answer in your response.
+- Do not try to fix the answer, only critique it.
+- You must never include code in your response, except for the JSON format above representing your reason and vote.
+
+At the end of your response, return your reason and vote in a single JSON object in the following format:
 
 ${JSON.stringify(expectedReasonsSchema, null, 4)}
 
-You must include a reason and vote for the answer provided, missing either will result in a failed review.
-You must include the JSON version of your vote and concise reason.
-Do not repeat the question, code or answer in your response.
-Do not try to fix the answer, only critique it.
-Keep your reasons short and to the point, maximum 3-4 sentences.
+Remember to never include code, especially braces, brackets, or quotes in your response, except for the JSON response.
 `
 
 logDebug(`=== REQUEST ${id} ===`)
