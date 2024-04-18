@@ -74,7 +74,6 @@ const answerId = `${id}-${answerModel}`
 
 // Map the model to the consistent username
 answerModel = openAiFromModel(answerModel)
-model = openAiFromModel(model)
 
 const votesFile = `${idDetails.fileId}.v.json`
 const outVotesPath = path.join(metaDir2, votesFile)

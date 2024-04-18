@@ -15,8 +15,6 @@ if (!dir || !fs.existsSync(dir)) {
     process.exit()
 }
 
-rankingModel = openAiFromModel(rankingModel)
-
 let fileCount = 0
 function processDir(dir) {
     const nodes = fs.readdirSync(dir)
