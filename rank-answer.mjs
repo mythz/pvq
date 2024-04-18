@@ -161,8 +161,9 @@ ${JSON.stringify(expectedReasonsSchema, null, 4)}
 
 You must include a reason and vote for the answer provided, missing either will result in a failed review.
 You must include the JSON version of your vote and concise reason.
-Do not repeat the question or answer in your response.
+Do not repeat the question, code or answer in your response.
 Do not try to fix the answer, only critique it.
+Keep your reasons short and to the point, maximum 3-4 sentences.
 `
 
 logDebug(`=== REQUEST ${id} ===`)
