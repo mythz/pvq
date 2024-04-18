@@ -500,10 +500,12 @@ export function idParts(id) {
     const dir2 = idStr.substring(3,6)
     const fileId = idStr.substring(6)
     const file = fileId + '.json'
-    const questionDir = `./questions/${dir1}/${dir2}`
-    const metaDir = `./meta/${dir1}/${dir2}`
+    const questionDir = `questions/${dir1}/${dir2}`
+    const metaDir = `meta/${dir1}/${dir2}`
     const questionPath = `${questionDir}/${file}`
-    return { dir1, dir2, fileId, file, questionDir, metaDir, questionPath }
+    const metaPath = `${questionDir}/${fileId}.meta.json`
+    const vPath = `${metaDir}/${fileId}.v.json`
+    return { dir1, dir2, fileId, file, questionDir, metaDir, questionPath, metaPath, vPath }
 }
 
 export function sleep(ms) {
