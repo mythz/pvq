@@ -32,9 +32,15 @@ const ProviderApiKeyVars = {
 export function openAiUrl(model,port) {
     let provider = ModelProviders[model]
     const apiPath = '/v1/chat/completions'
-    const fn = ProviderApis[provider]
+    const fn = provider && ProviderApis[provider]
     if (fn) {
         return fn(apiPath)
+    }
+    if (provider) {
+        const url = process.env[`${provider.toUpperCase()}_URL`]
+        if (url) {
+            return url + apiPath
+        }
     }
     return (process.env.OLLAMA_URL == null ? `http://localhost:${port ?? '11434'}` : `${process.env.OLLAMA_URL}`) + `${apiPath}`
 }
@@ -386,6 +392,10 @@ export function useClient() {
     }
 
     function get(url) { return send(url, "GET") }
+    async function getJson(url) {
+        const r = await get(url)
+        return await r.json()
+    }
     function send(url, method, body) {
         if (url.startsWith('/'))
             url = BASE_URL + url
@@ -409,7 +419,14 @@ export function useClient() {
         }))
     }
 
-    return { auth, get, send, fail, openAi, openAiDefaults, openAiFromModel, openAiResponse, sleep }
+    function baseUrl(url) {
+        if (typeof url == 'string') {
+            BASE_URL = url
+        }
+        return BASE_URL
+    }
+
+    return { auth, get, getJson, send, fail, openAi, openAiDefaults, openAiFromModel, openAiResponse, sleep, baseUrl }
 }
 
 export function useLogging() {
