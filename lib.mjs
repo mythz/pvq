@@ -43,7 +43,9 @@ export function openAiApiKey(model) {
                     ? new Date().valueOf() % 2 == 0 ? process.env.GOOGLE_API_KEY : (process.env.GOOGLE_API_KEY2 || process.env.GOOGLE_API_KEY)
                     : provider === 'anthropic'
                         ? process.env.ANTHROPIC_API_KEY
-                        : null
+                        : provider === 'cohere'
+                            ? process.env.COHERE_API_KEY
+                            : null
 }
 
 // Converts API model names to their model usernames in pvq.app
@@ -148,6 +150,20 @@ export function openAiResponse(txt, model) {
             console.log('google response error', e, res)
             throw e
         }
+    } else if (provider === 'cohere') {
+        const content = res.text
+        res.message = '${choices[0].message.content}'
+        res.id = `chatcmpl-${created}`
+        res.object = 'chat.completion'
+        res.created = created
+        res.choices = [{
+            index: 0,
+            message: {
+                role: 'assistant',
+                content,
+            },
+            finish_reason: 'stop'
+        }]
     } else if (provider === 'anthropic') {
         const content = res.content[0].text
         res.content[0].text = '${choices[0].message.content}'
@@ -220,6 +236,35 @@ async function openAi(opt) {
                 }
             }),
             // signal: AbortSignal.timeout(60 * 1000), // Doesn't work
+        })
+    } else if (provider === 'cohere') {
+        const url = `https://api.cohere.ai/v1/chat`
+        headers['Authorization'] = `Bearer ${apiKey}`
+        // Change messages roles from "assistant" to "CHATBOT","user" to "USER" and "system" to "SYSTEM"
+        messages.forEach(m => {
+            if (m.role === 'assistant') m.role = 'CHATBOT'
+            if (m.role === 'user') m.role = 'USER'
+            if (m.role === 'system') m.role = 'SYSTEM'
+        })
+        // Change `content` to `message` for previous messages
+        messages.forEach(m => {
+            m.message = m.content
+            delete m.content
+        })
+        if(systemPrompt)
+            messages.push({role: 'SYSTEM', message: systemPrompt.content})
+        let body = {
+            chat_history:messages,
+            message: content,
+            temperature,
+            max_tokens,
+        }
+        // Add the new message
+        return await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body),
+            // signal: AbortSignal.timeout(60 * 1000),
         })
     } else if (provider === 'anthropic') {
         if (apiKey) {
