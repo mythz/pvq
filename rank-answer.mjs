@@ -82,11 +82,11 @@ const votesRelativePath = path.join('meta', idDetails.dir1, idDetails.dir2, vote
 // const outValidationPath = path.join(metaDir2, `${idDetails.fileId}.validation.${answerModel}.${model}.json`)
 
 const { openAi } = useClient()
-const maxTokens = 1024
+const maxTokens = 512
 const temperature = 0.1
 const expectedReasonsSchema = {
-    "score": 1,
-    "reason": "Your reason goes here. Above score is only an example."
+    "reason": "Your reason goes here. Below score is only an example. Score should reflect the review of the answer.",
+    "score": 1
 }
 
 // Read v.json in meta dir
@@ -166,7 +166,7 @@ At the end of your response, return your reason and vote in a single JSON object
 
 ${JSON.stringify(expectedReasonsSchema, null, 4)}
 
-Remember to never include code, especially braces, brackets, or quotes in your response, except for the JSON response.
+Remember to never include code, especially braces, brackets, or quotes in your short response, except for the JSON response.
 `
 
 logDebug(`=== REQUEST ${id} ===`)

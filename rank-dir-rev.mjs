@@ -48,9 +48,6 @@ function processDir(dir) {
         if (votesData.modelReasons == null || votesData.modelReasons[answerModel] == null)
             return true;
 
-        if (votesData.gradedBy != null && votesData.gradedBy[safeRankingModel] != null && votesData.gradedBy[safeRankingModel].includes(`${id}-${answerModel}`))
-            return false;
-
         return false;
     })
 

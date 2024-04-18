@@ -9,6 +9,7 @@ using ServiceStack.DataAnnotations;
 var isDebug =  Debugger.IsAttached;
 var basePath = isDebug ? "../../../../questions" : "../questions";
 var baseDataPath = isDebug ? "../../../../data" : "../data";
+var distPath = isDebug ? "../../../../dist" : "../dist";
 
 System.Text.Json.JsonSerializerOptions SystemJsonOptions = new(TextConfig.SystemJsonOptions)
 {
@@ -17,10 +18,10 @@ System.Text.Json.JsonSerializerOptions SystemJsonOptions = new(TextConfig.System
 
 string ToJson<T>(T obj) => System.Text.Json.JsonSerializer.Serialize(obj, SystemJsonOptions);
 
-if (File.Exists($"{basePath}/app.db".MapProjectPath())) File.Delete($"{basePath}/app.db".MapProjectPath());
-File.Copy($"{baseDataPath}/filtered.db".MapProjectPath(), $"{basePath}/app.db".MapProjectPath());
+if (File.Exists($"{distPath}/app.db".MapProjectPath())) File.Delete($"{distPath}/app.db".MapProjectPath());
+File.Copy($"{baseDataPath}/filtered.db".MapProjectPath(), $"{distPath}/app.db".MapProjectPath());
 
-var dbFactory = new OrmLiteConnectionFactory($"{basePath}/app.db".MapProjectPath(), SqliteDialect.Provider);
+var dbFactory = new OrmLiteConnectionFactory($"{distPath}/app.db".MapProjectPath(), SqliteDialect.Provider);
 
 using var db = dbFactory.Open();
 
