@@ -65,39 +65,44 @@ const Handlers = {
         const url = new URL(req.url)
         if (req.method === 'POST') {
             const reqBody = await req.json()
-            const { answerId, model, reason, score } = reqBody
-            console.log(`POST ${url.pathname}`, { answerId, model, reason, score })
+            const { answerId, model, reason, score, fail } = reqBody
+            console.log(`POST ${url.pathname}`, { answerId, model, reason, score, fail })
             if (!answerId) {
                 return new Response('answerId is required', { status: 400 })
             }
-            if (!model) {
-                return new Response('model used to grade task is required', { status: 400 })
-            }
-            if (!reason || !score) {
-                return new Response('reason and score are required to complete rank task', { status: 400 })
-            }
+            if (fail) {
+                console.error(`deleting failed task ${answerId}`)
+                stmtDelete.run(answerId)
+            } else {
+                if (!model) {
+                    return new Response('model used to grade task is required', { status: 400 })
+                }
+                if (!reason || !score) {
+                    return new Response('reason and score are required to complete rank task', { status: 400 })
+                }
 
-            var task = db.prepare(`SELECT * FROM RankTask WHERE Id = ?`).get(answerId) as RankTask
-            if (!task) {
-                return new Response('task not found', { status: 404 })
-            }
+                var task = db.prepare(`SELECT * FROM RankTask WHERE Id = ?`).get(answerId) as RankTask
+                if (!task) {
+                    return new Response('task not found', { status: 404 })
+                }
 
-            const vJson = fs.readFileSync(task.VPath, 'utf-8')
-            const vObj = JSON.parse(vJson)
-            const answerModel = rightPart(answerId, '-')
-            vObj.modelVotes[answerModel] = score
-            vObj.modelReasons[answerModel] = reason
-            const gradedAnswers = vObj.gradedBy[model] || (vObj.gradedBy[model]=[])
-            if (!gradedAnswers.includes(answerId)) {
-                gradedAnswers.push(answerId)
-            }
-            
-            fs.writeFileSync(task.VPath, JSON.stringify(vObj, null, 4))
-            const elapsed = new Date().valueOf() - startedAt
-            const uptime = formatTime(elapsed)
+                const vJson = fs.readFileSync(task.VPath, 'utf-8')
+                const vObj = JSON.parse(vJson)
+                const answerModel = rightPart(answerId, '-')
+                vObj.modelVotes[answerModel] = score
+                vObj.modelReasons[answerModel] = reason
+                const gradedAnswers = vObj.gradedBy[model] || (vObj.gradedBy[model]=[])
+                if (!gradedAnswers.includes(answerId)) {
+                    gradedAnswers.push(answerId)
+                }
+                
+                fs.writeFileSync(task.VPath, JSON.stringify(vObj, null, 4))
+                const elapsed = new Date().valueOf() - startedAt
+                const uptime = formatTime(elapsed)
 
-            console.log(`uptime:${uptime} ${++completed}/${total} completed task in ${task.VPath}`, reqBody)
-            stmtDelete.run(answerId)
+                console.log(`uptime:${uptime} ${++completed}/${total} completed task in ${task.VPath}`, reqBody)
+                stmtDelete.run(answerId)
+            }
         }
 
         const { after, before, mod, take }:any = getQueryParams(new URL(req.url).searchParams, 

@@ -32,11 +32,13 @@ const take = parseInt(process.argv[4]) || 1
 
 const url = `${BaseUrl}/api/RankAnswer?after=${after}&before=${before}&take=${take}`
 
-
 async function fetchNext() {
     console.log(`GET ${url}`)
     let r = await fetch(url)
     return r
+}
+const failedAnswers = {
+
 }
 
 let count = 0
@@ -78,6 +80,21 @@ async function run() {
                     if (!r.ok) {
                         console.error(`POST ${url}`, await r.text())
                         r = null
+                    }
+                } else {
+                    console.error(`Failed to rank ${task.answerId}`)
+                    const answerFailures = (failedAnswers[task.answerId] || 0) + 1
+                    failedAnswers[task.answerId] = answerFailures
+                    console.log(`${answerFailures}x failed to rank ${task.answerId}`)
+                    if (answerFailures > 3) {
+                        console.error(`Giving up, flagging ${task.answerId} as failed...`)
+                        r = await fetch(url, {
+                            method: 'POST',
+                            body: JSON.stringify({ answerId:task.answerId, model, fail:true }),
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        })
                     }
                 }
             }
