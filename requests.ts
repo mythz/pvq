@@ -211,7 +211,7 @@ export async function rankAnswerResponse({ answerId, postId, model, content, sys
     try {
         rankResult = JSON.parse(finalJson)
     } catch (e) {
-        console.error(`Failed to parse JSON: ${finalJson}`, e)
+        console.error(`Failed to parse JSON`, e)
         return null
     }    
     if (rankResult == null || rankResult.score == null || rankResult.reason == null) {
