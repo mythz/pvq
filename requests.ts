@@ -197,10 +197,15 @@ export async function rankAnswerResponse({ answerId, postId, model, content, sys
         }
     }
     
-    console.log(`JSON found ${finalJson.length}`)
-    console.log(`=== STRUCTURED REASONS for ${answerId} ===`)
-    console.log(finalJson)
-    console.log(`=== END STRUCTURED REASONS for ${answerId} in ${performance.now() - startTime}ms ===\n\n`)
+    try {
+        console.log(`JSON found ${finalJson.length}`)
+        console.log(`=== STRUCTURED REASONS for ${answerId} ===`)
+        console.log(finalJson)
+        console.log(`=== END STRUCTURED REASONS for ${answerId} in ${performance.now() - startTime}ms ===\n\n`)
+    } catch(e) {
+        console.error(`Failed finalJson: ${finalJson}`, e)
+        return null
+    }
     
     let rankResult:RankResult|null = null
     try {
