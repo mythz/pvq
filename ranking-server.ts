@@ -83,7 +83,7 @@ const Handlers = {
                 if (!model) {
                     return new Response('model used to grade task is required', { status: 400 })
                 }
-                if (!reason || !score) {
+                if (reason == null || score == null) {
                     return new Response('reason and score are required to complete rank task', { status: 400 })
                 }
 
