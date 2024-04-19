@@ -62,10 +62,11 @@ const Handlers = {
     },
     "/api/RankAnswer": async (req:Request) => {
 
+        const url = new URL(req.url)
         if (req.method === 'POST') {
             const reqBody = await req.json()
             const { answerId, model, reason, score } = reqBody
-            console.log(`POST /api/RankAnswer`, { answerId, model, reason, score })
+            console.log(`POST ${url.pathname}`, { answerId, model, reason, score })
             if (!answerId) {
                 return new Response('answerId is required', { status: 400 })
             }
@@ -166,9 +167,9 @@ Bun.serve({
     development: true,
     fetch(req:Request) {
         const { method } = req;
-        const { pathname } = new URL(req.url)
+        const { pathname, search } = new URL(req.url)
 
-        console.log(`${req.method} ${pathname}`)
+        console.log(`${req.method} ${pathname}${search}`)
 
         const handler = Handlers[pathname]
         if (handler) {
