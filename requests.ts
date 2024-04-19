@@ -139,7 +139,12 @@ export async function rankAnswerResponse({ answerId, postId, model, content, sys
         finalJson = responseContent
     } else {
         structuredReasons = responseContent.match(/(?<=```json\n)\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
-    
+
+        if (structuredReasons == null || structuredReasons.length === 0) {
+            // Try without `json` after triple backticks
+            structuredReasons = responseContent.match(/(?<=```\n)\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
+        }
+
         if (structuredReasons == null || structuredReasons.length === 0) {
             console.error(`No structured reasons found in response: ${responseContent}`);
             return null
