@@ -3,10 +3,11 @@
 import fs from 'fs'
 import path from 'path'
 
-import { leftPart, rightPart } from './lib.mjs'
+import { loadEnv, leftPart, rightPart } from './lib.mjs'
 import { rankAnswerRequest, rankAnswerResponse } from './requests.mjs'
 
-const BaseUrl = `http://localhost:8080`
+loadEnv()
+const BaseUrl = process.env.RANKSERVER_URL || 'http://localhost:8080'
 
 const model = process.argv[2]
 const range = process.argv[3]
@@ -42,7 +43,8 @@ async function fetchNext() {
 let count = 0
 async function run() {
     let r:Response|null = null
-    while (count++ < 2) {
+    while (true) {
+        count++
         try {
             if (!r || !r.ok) {
                 r = await fetchNext()
@@ -51,6 +53,10 @@ async function run() {
             r = null
             // console.log('txt', txt)
             const tasks = JSON.parse(txt) as RankTask[]
+            if (tasks.length == 0) {
+                console.log('No more tasks')
+                process.exit(0)
+            }
 
             for (const task of tasks) {
                 const questionJson = fs.readFileSync(task.QuestionPath, 'utf-8')
@@ -76,10 +82,10 @@ async function run() {
                 // console.log(request)
 
                 const voteResult = await rankAnswerResponse(request)
-                console.log('voteResult', voteResult)
+                // console.log('voteResult', voteResult)
                 if (voteResult != null) {
                     const body = { id: task.Id, model, ...voteResult }
-                    console.log(`POST ${url}`, body)
+                    console.log(`${count} POST ${url}`, body)
                     r = await fetch(url, {
                         method: 'POST',
                         body: JSON.stringify(body),
