@@ -12,11 +12,18 @@ const BaseUrl = process.env.RANKSERVER_URL || 'http://localhost:8080'
 const model = process.argv[2]
 const range = process.argv[3]
 
-if (!model) {
-    throw new Error('model is required')
-}
-if (!range) {
-    throw new Error('range is required')
+const usage = `
+USAGE:
+
+ranking-worker.ts <model> <range>
+
+example: 
+$ ./ranking-worker.ts mixtral 0-10000
+`
+
+if (!model || !range) {
+    console.log(usage)
+    process.exit(0)
 }
 
 interface RankTask {
