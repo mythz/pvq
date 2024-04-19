@@ -238,6 +238,11 @@ if (responseContent.trim().startsWith('{')) {
     structuredReasons = responseContent.match(/(?<=```json\n)\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
 
     if (structuredReasons == null || structuredReasons.length === 0) {
+        // Try without `json` after triple backticks
+        structuredReasons = responseContent.match(/(?<=```\n)\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
+    }
+
+    if (structuredReasons == null || structuredReasons.length === 0) {
         logError(`No structured reasons found in response: ${responseContent}`);
         process.exit()
     }
