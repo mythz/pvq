@@ -77,9 +77,9 @@ async function processArgs(args) {
         `\n# Load model if not already loaded`,
         `  ./runpod.mjs mixtral init`,
         `\n# Use chat API`,
-        `  ./runpod.mjs mixtral openai "Write a function to reverse a string in javascript."`,
+        `  ./runpod.mjs mixtral chat "Write a function to reverse a string in javascript."`,
         `\n# Use Open AI API`,
-        `  ./runpod.mjs mixtral chat "How do I install nodejs?"`].join('\n') + '\n')
+        `  ./runpod.mjs mixtral openai "How do I install nodejs?"`].join('\n') + '\n')
     }
 }
 
