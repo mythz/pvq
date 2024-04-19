@@ -4,7 +4,7 @@ import fs from 'fs'
 import path from 'path'
 
 import { loadEnv, leftPart, rightPart } from './lib.mjs'
-import { rankAnswerRequest, rankAnswerResponse } from './requests.mjs'
+import { rankAnswerRequest, rankAnswerResponse, RankTaskDto } from './requests.ts'
 
 loadEnv()
 const BaseUrl = process.env.RANKSERVER_URL || 'http://localhost:8080'
@@ -26,20 +26,12 @@ if (!model || !range) {
     process.exit(0)
 }
 
-interface RankTask {
-    Id: string
-    PostId: number
-    VPath: string
-    QuestionPath: string
-    MetaPath: string
-    AnswerPath: string
-}
-
 const after = parseInt(leftPart(range, '-')) || 0
 const before = parseInt(rightPart(range, '-')) || 100000000
 const take = parseInt(process.argv[4]) || 1
 
 const url = `${BaseUrl}/api/RankAnswer?after=${after}&before=${before}&take=${take}`
+
 
 async function fetchNext() {
     console.log(`GET ${url}`)
@@ -52,6 +44,7 @@ async function run() {
     let r:Response|null = null
     while (true) {
         count++
+        if (count > 1) process.exit(0)
         try {
             if (!r || !r.ok) {
                 r = await fetchNext()
@@ -59,39 +52,21 @@ async function run() {
             const txt = await r.text()
             r = null
             // console.log('txt', txt)
-            const tasks = JSON.parse(txt) as RankTask[]
+            const tasks = JSON.parse(txt) as RankTaskDto[]
             if (tasks.length == 0) {
                 console.log('No more tasks')
                 process.exit(0)
             }
 
             for (const task of tasks) {
-                const questionJson = fs.readFileSync(task.QuestionPath, 'utf-8')
-                const question = JSON.parse(questionJson)
-    
-                const answerJson = fs.readFileSync(task.AnswerPath, 'utf-8')
-                const answer = JSON.parse(answerJson)
-    
-                // console.log('question', question)
-                // console.log('answer', answer)
-
-                const args = {
-                    model,
-                    answerId:task.Id,
-                    postId: question.id,
-                    title: question.title,
-                    body: question.body,
-                    tags: question.tags,
-                    answerContent: answer.body,
-                }
                 // console.log('args', args)
-                const request = rankAnswerRequest(args)
+                const request = rankAnswerRequest(task, model)
                 // console.log(request)
 
                 const voteResult = await rankAnswerResponse(request)
                 // console.log('voteResult', voteResult)
                 if (voteResult != null) {
-                    const body = { id: task.Id, model, ...voteResult }
+                    const body = { answerId:task.answerId, model, ...voteResult }
                     console.log(`${count} POST ${url}`, body)
                     r = await fetch(url, {
                         method: 'POST',

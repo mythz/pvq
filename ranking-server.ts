@@ -36,6 +36,14 @@ interface RankTask {
     MetaPath: string
     AnswerPath: string
 }
+interface RankTaskDto {
+    answerId: string,
+    postId: number,
+    title: string,
+    tags: string[],
+    body: string,
+    answerBody: string,
+}
 
 function getQueryParams(qs:URLSearchParams, args:any) {
     const to = {}
@@ -57,10 +65,10 @@ const Handlers = {
 
         if (req.method === 'POST') {
             const reqBody = await req.json()
-            const { id, model, reason, score } = reqBody
-            console.log(`POST /api/RankAnswer`, { id, model, reason, score })
-            if (!id) {
-                return new Response('id (answerId) is required', { status: 400 })
+            const { answerId, model, reason, score } = reqBody
+            console.log(`POST /api/RankAnswer`, { answerId, model, reason, score })
+            if (!answerId) {
+                return new Response('answerId is required', { status: 400 })
             }
             if (!model) {
                 return new Response('model used to grade task is required', { status: 400 })
@@ -69,24 +77,24 @@ const Handlers = {
                 return new Response('reason and score are required to complete rank task', { status: 400 })
             }
 
-            var task = db.prepare(`SELECT * FROM RankTask WHERE Id = ?`).get(id) as RankTask
+            var task = db.prepare(`SELECT * FROM RankTask WHERE Id = ?`).get(answerId) as RankTask
             if (!task) {
                 return new Response('task not found', { status: 404 })
             }
 
             const vJson = fs.readFileSync(task.VPath, 'utf-8')
             const vObj = JSON.parse(vJson)
-            const answerModel = rightPart(task.Id, '-')
+            const answerModel = rightPart(answerId, '-')
             vObj.modelVotes[answerModel] = score
             vObj.modelReasons[answerModel] = reason
             const gradedAnswers = vObj.gradedBy[model] || (vObj.gradedBy[model]=[])
-            if (!gradedAnswers.includes(id)) {
-                gradedAnswers.push(id)
+            if (!gradedAnswers.includes(answerId)) {
+                gradedAnswers.push(answerId)
             }
             
             fs.writeFileSync(task.VPath, JSON.stringify(vObj, null, 4))
             console.log(`${++completed}/${total} completed task in ${task.VPath}`, reqBody)
-            stmtDelete.run(id)
+            stmtDelete.run(answerId)
         }
 
         const { after, before, mod, take }:any = getQueryParams(new URL(req.url).searchParams, 
@@ -111,7 +119,7 @@ const Handlers = {
         const sql = `SELECT * FROM RankTask ${where} ORDER BY PostId LIMIT ${parseInt(take) || 1}`
         // console.log(`sql`,sql,params)
 
-        let tasks:RankTask[] = []
+        let tasks:RankTaskDto[] = []
 
         while (tasks.length === 0) {
             const stmt = db.prepare(sql)
@@ -129,7 +137,20 @@ const Handlers = {
                     console.log(`deleting already ranked ${task.Id} in ${task.VPath}`)
                     stmtDelete.run(task.Id)
                 } else {
-                    tasks.push(task)
+                    const questionJson = fs.readFileSync(task.QuestionPath, 'utf-8')
+                    const question = JSON.parse(questionJson)
+        
+                    const answerJson = fs.readFileSync(task.AnswerPath, 'utf-8')
+                    const answer = JSON.parse(answerJson)
+
+                    tasks.push({
+                        answerId: task.Id,
+                        postId: task.PostId,
+                        title: question.title,
+                        tags: question.tags,
+                        body: question.body,
+                        answerBody: answer.body,
+                    })
                 }
            })
         }

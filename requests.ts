@@ -1,11 +1,24 @@
 import { useClient } from './lib.mjs'
 
+export interface RankTaskDto {
+    answerId: string,
+    postId: number,
+    title: string,
+    tags: string[],
+    body: string,
+    answerBody: string,
+}
+export interface RankResult {
+    score: number,
+    reason: string
+}
+
 const expectedReasonsSchema = {
     "reason": "Your reason goes here. Below score is only an example. Score should reflect the review of the answer.",
     "score": 1
 }
 
-export function rankAnswerRequest({ model, answerId, postId, title, body, tags, answerContent}) {
+export function rankAnswerRequest({ answerId, postId, title, body, tags, answerBody}:RankTaskDto, model:string) {
     return {
         model,
         answerId,
@@ -33,7 +46,7 @@ Think about the answer given in relation to the original user question. Use the 
 
 ## Answer Attempt
 
-${answerContent}
+${answerBody}
 ---
 
 Now review and score the answer above out of 10.
@@ -67,9 +80,9 @@ export async function rankAnswerResponse({ answerId, postId, model, content, sys
 
     let retry = 0
     let elapsed_ms = 0
-    let txt = null
+    let txt:any = null
     let res = null
-    let r = null
+    let r:Response|null = null
     let startTime = performance.now()
     
     while (retry++ <= 10) {
@@ -78,7 +91,7 @@ export async function rankAnswerResponse({ answerId, postId, model, content, sys
             let reqOptions = {content, model, systemPrompt, temperature, maxTokens}
             r = await openAi(reqOptions)
             let endTime = performance.now()
-            elapsed_ms = parseInt(endTime - startTime)
+            elapsed_ms = endTime - startTime
     
             console.log(`=== RESPONSE ${postId} in ${elapsed_ms}ms ===\n`)
             txt = await r.text()
@@ -89,7 +102,7 @@ export async function rankAnswerResponse({ answerId, postId, model, content, sys
                     // Try handle GROQ rate limiting, if not found, defaults to 1000ms
                     console.log(`Rate limited, retry-after ${r.headers.get('retry-after')} seconds...`)
     
-                    const retryAfter = parseInt(r.headers.get('retry-after'))
+                    const retryAfter = parseInt(r.headers.get('retry-after') ?? '')
                     if (!isNaN(retryAfter)) {
                         sleepMs = retryAfter * 1000
                     }
@@ -112,8 +125,8 @@ export async function rankAnswerResponse({ answerId, postId, model, content, sys
         return null
     }
     
-    let structuredReasons = null;
-    let finalJson = null;
+    let structuredReasons:any = null
+    let finalJson = ''
     
     let usedMarkdown = false;
     
@@ -150,6 +163,8 @@ export async function rankAnswerResponse({ answerId, postId, model, content, sys
         usedMarkdown = true
     }
     
+    if (!finalJson) return null
+
     // try fix JSON output, invalid JSON tends to happen outside of the model using code fences
     // HACKY but models don't already produce valid JSON, and we don't want to waste responses
     if (!usedMarkdown) {
@@ -180,23 +195,23 @@ export async function rankAnswerResponse({ answerId, postId, model, content, sys
     console.log(`JSON found ${finalJson.length}`)
     console.log(`=== STRUCTURED REASONS for ${answerId} ===`)
     console.log(finalJson)
-    console.log(`=== END STRUCTURED REASONS for ${answerId} in ${parseInt(performance.now() - startTime)}ms ===\n\n`)
+    console.log(`=== END STRUCTURED REASONS for ${answerId} in ${performance.now() - startTime}ms ===\n\n`)
     
-    let voteResult = null
+    let rankResult:RankResult|null = null
     try {
-        voteResult = JSON.parse(finalJson)
+        rankResult = JSON.parse(finalJson)
     } catch (e) {
         console.error(`Failed to parse JSON: ${finalJson}`, e)
         return null
     }    
-    if (voteResult == null || voteResult.score == null || voteResult.reason == null) {
+    if (rankResult == null || rankResult.score == null || rankResult.reason == null) {
         console.error(`Invalid vote result for ${answerId}: ${finalJson}`)
         return null
     }    
-    if (voteResult.score == null || voteResult.reason == null) {
+    if (rankResult.score == null || rankResult.reason == null) {
         console.error(`Invalid vote result for ${answerId}: ${structuredReasons[0]}`)
         return null
     }
 
-    return voteResult
+    return rankResult
 }
