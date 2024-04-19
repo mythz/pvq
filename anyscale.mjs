@@ -13,28 +13,8 @@ async function processArgs(args) {
     const { getJson, send, openAi } = useClient()
     const API_KEY = process.env.ANYSCALE_API_KEY
     const BASE_URL = process.env.ANYSCALE_URL
-    // baseUrl(ANYSCALE_URL)
 
-    // USAGE: ./anyscale.mjs mixtral init
-    if (cmd === 'init') {
-        const obj = await getJson(`${BASE_URL}/api/tags`)
-        const { models } = obj
-        // console.log('models:', models)
-
-        const modelInfo = models.find(x => x.model === apiModel)
-
-        if (!modelInfo) {
-            console.log(`${model} not loaded, loading ${apiModel}...`)
-            const r = await send(`${BASE_URL}/api/pull`, 'POST', JSON.stringify({
-                name: model,
-            }))
-            Readable.fromWeb(r.body).pipe(process.stdout)
-        }
-        else if (apiModel) {
-            console.log(`${model} already loaded`, modelInfo)
-        }
-    }
-    else if (cmd === 'chat') {
+    if (cmd === 'chat') {
         // USAGE: ./anyscale.mjs mixtral chat "How do I install nodejs?"
         const content = args.slice(2).join(' ')
         const url = `${BASE_URL}/chat/completions`
@@ -72,7 +52,7 @@ async function processArgs(args) {
         const r = await openAi({ model, content })
         const txt = await r.text()
         const obj = txt.length > 0 ? JSON.parse(txt) : null
-        console.log('obj', obj)
+        // console.log('obj', obj)
         const responseContent = txt.length > 0 && obj?.choices?.length > 0 && obj.choices[0].message?.content
         if (responseContent) {
             console.log('\n\n' + responseContent + '\n')
@@ -85,11 +65,7 @@ async function processArgs(args) {
             console.log(`Unknown command: ${cmd}`)
         }
 
-        console.log(['\nUSAGE:',
-            `\n# Set ANYSCALE_URL in .env`,
-            `   ANYSCALE_URL=https://api.endpoints.anyscale.com`,
-            `\n# Load model if not already loaded`,
-            `  ./anyscale.mjs mixtral init`,
+        console.log(['\nUSAGE:',            
             `\n# Use chat API`,
             `  ./anyscale.mjs mixtral chat "Write a function to reverse a string in javascript."`,
             `\n# Use Open AI API`,

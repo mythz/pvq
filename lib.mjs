@@ -19,7 +19,7 @@ const ProviderApis = {
     'openai':    apiPath => `https://api.openai.com${apiPath}`,
     'anthropic': apiPath => `https://api.anthropic.com/v1/messages`,
     'google':    apiPath => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
-    'anyscale':  apiPath => `https://api.endpoints.anyscale.com/v1/chat/completions`,
+    'anyscale':  apiPath => `https://api.endpoints.anyscale.com${apiPath}`,
 }
 const ProviderApiKeyVars = {
     'groq':      'GROQ_API_KEY',
