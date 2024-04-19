@@ -19,6 +19,7 @@ const ProviderApis = {
     'openai':    apiPath => `https://api.openai.com${apiPath}`,
     'anthropic': apiPath => `https://api.anthropic.com/v1/messages`,
     'google':    apiPath => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+    'anyscale':  apiPath => `https://api.endpoints.anyscale.com/v1/chat/completions`,
 }
 const ProviderApiKeyVars = {
     'groq':      'GROQ_API_KEY',
@@ -27,6 +28,7 @@ const ProviderApiKeyVars = {
     'google':    'GOOGLE_API_KEY',
     'anthropic': 'ANTHROPIC_API_KEY',
     'cohere':    'COHERE_API_KEY',
+    'anyscale':  'ANYSCALE_API_KEY',
 }
 
 export function openAiUrl(model,port) {
@@ -86,6 +88,7 @@ export function openAiFromModel(model) {
         'gpt-4-turbo-preview':      'gpt4-turbo',
         'gpt-4-0125-preview':       'gpt4-turbo',
         'open-mixtral-8x7b':        'mixtral',
+        'mistralai/Mistral-7B-Instruct-v0.1': 'mixtral',
     }
     return mapping[model] ?? model
 }
@@ -127,6 +130,11 @@ export function openAiModel(model) {
             'claude-3-haiku':  'claude-3-haiku-20240307',
             'claude-3-sonnet': 'claude-3-sonnet-20240229',
             'claude-3-opus':   'claude-3-opus-20240229',
+        }
+        return mapping[model] ?? model
+    } else if (provider === 'anyscale') {
+        const mapping = {
+            'mixtral': 'mistralai/Mistral-7B-Instruct-v0.1',
         }
         return mapping[model] ?? model
     }
