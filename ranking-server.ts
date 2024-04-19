@@ -56,6 +56,12 @@ let total = db.prepare(`SELECT COUNT(*) AS count FROM RankTask`).get().count
 let completed = 0
 const startedAt = new Date().valueOf()
 
+let errorStream = fs.createWriteStream("rankging-server.error.log", {flags:'a'})
+function logError(message) {
+    console.error(message)
+    errorStream.write(message + "\n")
+}
+
 const Handlers = {
     "/": async (req:Request) => {
         return new Response(HomePage)
@@ -71,7 +77,7 @@ const Handlers = {
                 return new Response('answerId is required', { status: 400 })
             }
             if (fail) {
-                console.error(`deleting failed task ${answerId}`)
+                logError(`${answerId}: deleting failed task`)
                 stmtDelete.run(answerId)
             } else {
                 if (!model) {
