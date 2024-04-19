@@ -256,11 +256,6 @@ if (responseContent.trim().startsWith('{')) {
         process.exit()
     }
 
-    logDebug(`JSON found ${structuredReasons.length}`)
-    logDebug(`=== STRUCTURED REASONS for ${answerId} ===`)
-    logDebug(structuredReasons[0])
-    logDebug(`=== END STRUCTURED REASONS for ${answerPath} in ${parseInt(performance.now() - startTime)}ms ===\n\n`)
-
     finalJson = structuredReasons[0]
     usedMarkdown = true
 }
@@ -291,6 +286,11 @@ if (!usedMarkdown) {
         finalJson = finalJson.substring(0, lastBracket + 1)
     }
 }
+
+logDebug(`JSON found ${finalJson.length}`)
+logDebug(`=== STRUCTURED REASONS for ${answerId} ===`)
+logDebug(finalJson)
+logDebug(`=== END STRUCTURED REASONS for ${answerPath} in ${parseInt(performance.now() - startTime)}ms ===\n\n`)
 
 // Read current v.json
 let votes = {modelVotes: {}}
