@@ -44,7 +44,7 @@ async function run() {
     let r:Response|null = null
     while (true) {
         count++
-        if (count > 1) process.exit(0)
+        // if (count > 1) process.exit(0)
         try {
             if (!r || !r.ok) {
                 r = await fetchNext()
