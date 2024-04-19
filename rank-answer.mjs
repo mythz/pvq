@@ -242,7 +242,7 @@ if (responseContent.trim().startsWith('{')) {
         process.exit()
     }
 
-// Take first structured reason that contains the string 'score' and 'reason'
+    // Take first structured reason that contains the string 'score' and 'reason'
     structuredReasons = structuredReasons.filter(x => x.includes('score') && x.includes('reason'))
 
     if (structuredReasons.length === 0) {

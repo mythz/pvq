@@ -6,13 +6,22 @@ import { rightPart, idParts, extractIdFromPath } from "./lib.mjs"
 
 const dir = process.argv[2] || './meta'
 
-const taskDbPath = './dist/tasks.db'
+const taskDbPath = './dist/tasks-ungraded.db'
 
 if (fs.existsSync(taskDbPath)) {
     fs.rmSync(taskDbPath)
 }
 
 const db = new Database(taskDbPath)
+
+interface RankTask {
+    Id: string
+    PostId: number
+    VPath: string
+    QuestionPath: string
+    MetaPath: string
+    AnswerPath: string
+}
 
 // Id = AnswerId
 db.exec(`CREATE TABLE RankTask (
@@ -31,9 +40,9 @@ const tasks:any[] = []
 let count = 0
 
 function processDir(dir:string) {
-    // if (count > 10) {
-    //     return
-    // }
+    if (count > 10) {
+        return
+    }
 
     const nodes = fs.readdirSync(dir)
     const files = nodes.filter(x => x.endsWith('.json'))
@@ -45,6 +54,10 @@ function processDir(dir:string) {
         const vPath = path.join(dir, vFile)
         const vJson = fs.readFileSync(vPath, 'utf-8')
         const postId = extractIdFromPath(vPath)
+        const { questionDir, fileId, questionPath, metaPath } = idParts(postId)
+        const answers = fs.readdirSync(questionDir)
+            .filter(x => x.startsWith(`${fileId}.a.`) || x.startsWith(`${fileId}.h.`))
+
         if (isNaN(postId)) {
             console.log(`error postId ${postId} in ${vPath}`)
             return
@@ -87,9 +100,18 @@ function processDir(dir:string) {
 
             missingModels.forEach(model => {
                 const id = `${postId}-${model}` // answerId
-                const { questionDir, fileId, questionPath, metaPath, vPath } = idParts(postId)
                 const kind = model == 'accepted' || model == 'most-voted' ? 'h' : 'a'
                 const answerPath = path.join(questionDir, `${fileId}.${kind}.${model}.json`)
+                
+                if (model === 'accepted') {
+                    const mostVotedPath = path.join(questionDir, `${fileId}.${kind}.most-voted.json`)
+                    const acceptedSize = fs.existsSync(answerPath) ? fs.statSync(answerPath).size : 0
+                    const mostVotedSize = fs.existsSync(mostVotedPath) ? fs.statSync(mostVotedPath).size : 0
+                    if (acceptedSize === mostVotedSize || acceptedSize === 0) {
+                        return
+                    }
+                }
+
                 if (!fs.existsSync(vPath)) {
                     console.log(`error missing v file ${vPath}`)
                     return
