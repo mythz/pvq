@@ -8,11 +8,10 @@ async function processArgs(args) {
     const model = args[0]
     const cmd = args[1]
     const content = args[2] || ''
-    const apiModel = !model ? `mistralai/Mixtral-8x7B-Instruct-v0.1` : model
 
     const { getJson, send, openAi } = useClient()
     const API_KEY = process.env.ANYSCALE_API_KEY
-    const BASE_URL = process.env.ANYSCALE_URL
+    const BASE_URL = `https://api.endpoints.anyscale.com/v1`
 
     if (cmd === 'chat') {
         // USAGE: ./anyscale.mjs mixtral chat "How do I install nodejs?"
@@ -67,7 +66,7 @@ async function processArgs(args) {
 
         console.log(['\nUSAGE:',            
             `\n# Use chat API`,
-            `  ./anyscale.mjs mixtral chat "Write a function to reverse a string in javascript."`,
+            `  ./anyscale.mjs "mistralai/Mistral-7B-Instruct-v0.1" chat "Write a function to reverse a string in javascript."`,
             `\n# Use Open AI API`,
             `  ./anyscale.mjs mixtral openai "How do I install nodejs?"`].join('\n') + '\n')
     }
