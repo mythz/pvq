@@ -66,7 +66,7 @@ const Handlers = {
         if (req.method === 'POST') {
             const reqBody = await req.json()
             const { answerId, model, reason, score, fail } = reqBody
-            console.log(`POST ${url.pathname}`, { answerId, model, reason, score, fail })
+            console.log(`POST ${url.pathname}`, reqBody)
             if (!answerId) {
                 return new Response('answerId is required', { status: 400 })
             }
