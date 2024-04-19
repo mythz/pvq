@@ -220,31 +220,43 @@ if (!responseContent) {
 }
 
 let structuredReasons = null;
+let finalJson = null;
 
 if(responseContent.trim().startsWith('{')) {
     // Try to extract the JSON from the response, if it's already JSON
-    responseContent = `\n\`\`\`json\n${responseContent.trim()}\n\`\`\``
-}
+    finalJson = responseContent.trim()
+} else if(responseContent.trim().startsWith('"reason')) {
+    // Try to extract the JSON from the response, if it looks like broken json
+    responseContent = `{\n${responseContent.trim()}`
+    finalJson = responseContent
+} else {
+    structuredReasons = responseContent.match(/(?<=```json\n)\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
 
-structuredReasons = responseContent.match(/(?<=```json\n)\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
-
-if (structuredReasons == null || structuredReasons.length === 0) {
-    logError(`No structured reasons found in response: ${responseContent}`);
-    process.exit()
-}
+    if (structuredReasons == null || structuredReasons.length === 0) {
+        logError(`No structured reasons found in response: ${responseContent}`);
+        process.exit()
+    }
 
 // Take first structured reason that contains the string 'score' and 'reason'
-structuredReasons = structuredReasons.filter(x => x.includes('score') && x.includes('reason'))
+    structuredReasons = structuredReasons.filter(x => x.includes('score') && x.includes('reason'))
 
-if (structuredReasons.length === 0) {
-    logError(`No valid structured reasons found in response: ${responseContent}`);
-    process.exit()
-}
+    if (structuredReasons.length === 0) {
+        logError(`No valid structured reasons found in response: ${responseContent}`);
+        process.exit()
+    }
 
-const isValid = structuredReasons[0].includes('score') && structuredReasons[0].includes('reason')
-if (!isValid) {
-    logError(`Invalid structured reasons found in response: ${responseContent}`);
-    process.exit()
+    const isValid = structuredReasons[0].includes('score') && structuredReasons[0].includes('reason')
+    if (!isValid) {
+        logError(`Invalid structured reasons found in response: ${responseContent}`);
+        process.exit()
+    }
+
+    logDebug(`JSON found ${structuredReasons.length}`)
+    logDebug(`=== STRUCTURED REASONS for ${answerId} ===`)
+    logDebug(structuredReasons[0])
+    logDebug(`=== END STRUCTURED REASONS for ${answerPath} in ${parseInt(performance.now() - startTime)}ms ===\n\n`)
+
+    finalJson = structuredReasons[0]
 }
 
 // Read current v.json
@@ -258,12 +270,23 @@ try {
     fs.writeFileSync(outVotesPath, JSON.stringify(emptyVFile(), null, 4))
 }
 
-logDebug(`JSON found ${structuredReasons.length}`)
-logDebug(`=== STRUCTURED REASONS for ${answerId} ===`)
-logDebug(structuredReasons[0])
-logDebug(`=== END STRUCTURED REASONS for ${answerPath} in ${parseInt(performance.now() - startTime)}ms ===\n\n`)
 
-let voteResult = JSON.parse(structuredReasons[0])
+finalJson = finalJson.replaceAll('\\', '').replaceAll('```json', '').replaceAll('```', '');
+
+let voteResult = null;
+try {
+    voteResult = JSON.parse(finalJson)
+} catch (e) {
+    logError(`Failed to parse JSON: ${finalJson}`, e)
+    process.exit()
+}
+
+
+if(voteResult == null || voteResult.score == null || voteResult.reason == null) {
+    logError(`Invalid vote result for ${answerPath}: ${finalJson}`)
+    process.exit()
+}
+
 if (voteResult.score == null || voteResult.reason == null) {
     logError(`Invalid vote result for ${answerPath}: ${structuredReasons[0]}`)
     process.exit()
