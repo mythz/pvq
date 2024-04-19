@@ -2,7 +2,7 @@
 import { Database } from 'bun:sqlite'
 import fs from 'fs'
 
-import { rightPart, getAnswerBody } from "./lib.mjs"
+import { rightPart, getAnswerBody, formatTime } from "./lib.mjs"
 
 const taskDbPath = './dist/tasks-missing.db'
 
@@ -54,6 +54,7 @@ const stmtDelete = db.prepare(`DELETE FROM RankTask WHERE Id = ?`)
 
 let total = db.prepare(`SELECT COUNT(*) AS count FROM RankTask`).get().count
 let completed = 0
+const startedAt = new Date().valueOf()
 
 const Handlers = {
     "/": async (req:Request) => {
@@ -91,7 +92,10 @@ const Handlers = {
             }
             
             fs.writeFileSync(task.VPath, JSON.stringify(vObj, null, 4))
-            console.log(`${++completed}/${total} completed task in ${task.VPath}`, reqBody)
+            const elapsed = new Date().valueOf() - startedAt
+            const uptime = formatTime(elapsed)
+
+            console.log(`uptime:${uptime} ${++completed}/${total} completed task in ${task.VPath}`, reqBody)
             stmtDelete.run(answerId)
         }
 
