@@ -82,10 +82,9 @@ async function run() {
                         r = null
                     }
                 } else {
-                    console.error(`Failed to rank ${task.answerId}`)
                     const answerFailures = (failedAnswers[task.answerId] || 0) + 1
                     failedAnswers[task.answerId] = answerFailures
-                    console.log(`${answerFailures}x failed to rank ${task.answerId}`)
+                    console.error(`${answerFailures}x failed to rank ${task.answerId}`)
                     if (answerFailures > 3) {
                         console.error(`Giving up, flagging ${task.answerId} as failed...`)
                         r = await fetch(url, {
