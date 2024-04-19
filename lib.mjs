@@ -643,3 +643,9 @@ export function emptyVFile() {
         gradedBy: { },
     })
 }
+
+export function getAnswerBody(json) {
+    if (!json) return ''
+    const obj = JSON.parse(json)
+    return obj.body || obj?.choices?.length > 0 && obj.choices[0].message?.content || ''
+}

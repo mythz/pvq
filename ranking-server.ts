@@ -1,10 +1,8 @@
 #!/usr/bin/env bun
 import { Database } from 'bun:sqlite'
 import fs from 'fs'
-import path from 'path'
-import { rightPart, idParts, extractIdFromPath } from "./lib.mjs"
 
-const dir = process.argv[2] || './meta'
+import { rightPart, getAnswerBody } from "./lib.mjs"
 
 const taskDbPath = './dist/tasks-missing.db'
 
@@ -141,7 +139,7 @@ const Handlers = {
                     const question = JSON.parse(questionJson)
         
                     const answerJson = fs.readFileSync(task.AnswerPath, 'utf-8')
-                    const answer = JSON.parse(answerJson)
+                    const answerBody = getAnswerBody(answerJson)
 
                     tasks.push({
                         answerId: task.Id,
@@ -149,7 +147,7 @@ const Handlers = {
                         title: question.title,
                         tags: question.tags,
                         body: question.body,
-                        answerBody: answer.body,
+                        answerBody,
                     })
                 }
            })

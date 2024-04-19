@@ -59,7 +59,7 @@ async function run() {
             }
 
             for (const task of tasks) {
-                // console.log('args', args)
+                console.log('task', task, model)
                 const request = rankAnswerRequest(task, model)
                 // console.log(request)
 
