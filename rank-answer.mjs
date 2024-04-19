@@ -29,7 +29,7 @@ if (answerPath.indexOf('.a.') === -1) {
     process.exit()
 }
 
-const { logInfo, logDebug, logError } = useLogging()
+const {logInfo, logDebug, logError} = useLogging()
 
 // Check path of running script
 const scriptPath = process.argv[1]
@@ -80,7 +80,7 @@ const votesRelativePath = path.join('meta', idDetails.dir1, idDetails.dir2, vote
 // const outReasonsPath = path.join(metaDir2, `${idDetails.fileId}.reasons.${model}.json`)
 // const outValidationPath = path.join(metaDir2, `${idDetails.fileId}.validation.${answerModel}.${model}.json`)
 
-const { openAi } = useClient()
+const {openAi} = useClient()
 const maxTokens = 1024
 const temperature = 0.1
 const expectedReasonsSchema = {
@@ -117,7 +117,10 @@ if (alreadyVoted) {
     process.exit()
 }
 
-let systemPrompt = { "role": "system", "content": "You are an AI assistant that votes on the quality and relevance of answers to a given question. Before giving votes, give an critique of each answer based on quality and relevance." }
+let systemPrompt = {
+    "role": "system",
+    "content": "You are an AI assistant that votes on the quality and relevance of answers to a given question. Before giving votes, give an critique of each answer based on quality and relevance."
+}
 
 let r = null
 let startTime = performance.now()
@@ -181,14 +184,14 @@ while (retry++ <= 10) {
     let startTime = performance.now()
     let sleepMs = 1000 * retry
     try {
-        let reqOptions = { content, model, port, systemPrompt, temperature, maxTokens }
+        let reqOptions = {content, model, port, systemPrompt, temperature, maxTokens}
         r = await openAi(reqOptions)
         let endTime = performance.now()
         elapsed_ms = parseInt(endTime - startTime)
 
         logDebug(`=== RESPONSE ${id} in ${elapsed_ms}ms ===\n`)
         txt = await r.text()
-        
+
         if (!r.ok) {
             console.log(`${r.status} openAi request ${retry + 1} failed: ${txt}`)
             if (r.status === 429) {
@@ -203,10 +206,10 @@ while (retry++ <= 10) {
         } else {
             res = openAiResponse(txt, model)
         }
-        if (res) break        
+        if (res) break
     } catch (e) {
         logError(`Failed:`, e.message)
-        fs.writeFileSync(errorPath, JSON.stringify({ id, error: e.message, stacktrace: e.stacktrace }, null, 4))
+        fs.writeFileSync(errorPath, JSON.stringify({id, error: e.message, stacktrace: e.stacktrace}, null, 4))
         process.exit()
     }
     console.log(`retrying in ${sleepMs}ms...`)
@@ -222,10 +225,12 @@ if (!responseContent) {
 let structuredReasons = null;
 let finalJson = null;
 
-if(responseContent.trim().startsWith('{')) {
+let usedMarkdown = false;
+
+if (responseContent.trim().startsWith('{')) {
     // Try to extract the JSON from the response, if it's already JSON
     finalJson = responseContent.trim()
-} else if(responseContent.trim().startsWith('"reason')) {
+} else if (responseContent.trim().startsWith('"reason')) {
     // Try to extract the JSON from the response, if it looks like broken json
     responseContent = `{\n${responseContent.trim()}`
     finalJson = responseContent
@@ -257,10 +262,38 @@ if(responseContent.trim().startsWith('{')) {
     logDebug(`=== END STRUCTURED REASONS for ${answerPath} in ${parseInt(performance.now() - startTime)}ms ===\n\n`)
 
     finalJson = structuredReasons[0]
+    usedMarkdown = true
+}
+
+// try fix JSON output, invalid JSON tends to happen outside of the model using code fences
+// HACKY but models don't already produce valid JSON, and we don't want to waste responses
+if (!usedMarkdown) {
+    finalJson = finalJson.replaceAll('\\', '').replaceAll('```json', '').replaceAll('```', '');
+
+    // Count how many double quotes are in the finalJson
+    let doubleQuotes = (finalJson.match(/"/g) || []).length
+    // If the number of double quotes is > 4, then we need to remove the extra double quotes
+    if (doubleQuotes > 4) {
+        let indexOfReason = finalJson.indexOf('"reason": "');
+        let indexOfScore = finalJson.indexOf('"score"');
+
+    // Replace all double quotes after the first occurrence of "reason" key and before the first occurrence of "score"
+        let reason = finalJson.substring(indexOfReason + 11, indexOfScore - 10).replaceAll('"', '\'');
+    // Replace old reason with new reason
+        finalJson = finalJson.replace(finalJson.substring(indexOfReason + 11, indexOfScore - 10), reason);
+    }
+
+    // Find the last '}' bracket that occurs shortly after the 'score' key
+    let lastBracket = finalJson.lastIndexOf('}');
+    let indexOfScore = finalJson.lastIndexOf('"score"');
+    if (indexOfScore - lastBracket < -5) {
+        // Remove everything after the last bracket
+        finalJson = finalJson.substring(0, lastBracket + 1)
+    }
 }
 
 // Read current v.json
-let votes = { modelVotes: {} }
+let votes = {modelVotes: {}}
 try {
     if (fs.existsSync(outVotesPath)) {
         votes = JSON.parse(fs.readFileSync(outVotesPath, 'utf-8'))
@@ -270,9 +303,6 @@ try {
     fs.writeFileSync(outVotesPath, JSON.stringify(emptyVFile(), null, 4))
 }
 
-
-finalJson = finalJson.replaceAll('\\', '').replaceAll('```json', '').replaceAll('```', '');
-
 let voteResult = null;
 try {
     voteResult = JSON.parse(finalJson)
@@ -281,8 +311,7 @@ try {
     process.exit()
 }
 
-
-if(voteResult == null || voteResult.score == null || voteResult.reason == null) {
+if (voteResult == null || voteResult.score == null || voteResult.reason == null) {
     logError(`Invalid vote result for ${answerPath}: ${finalJson}`)
     process.exit()
 }
