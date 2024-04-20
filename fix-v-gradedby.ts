@@ -44,7 +44,7 @@ function processDir(dir) {
             })
         }
         vObj.gradedBy = gradedBy
-        if (++count % 200 == 0) {
+        if (++count % 1000 == 0) {
             console.log(`${count} ${path.join(dir,file)} new gradedBy:`)
             console.log(vObj.gradedBy)
             // fs.writeFileSync(path.join(dir, file), JSON.stringify(vObj, null, 4))
