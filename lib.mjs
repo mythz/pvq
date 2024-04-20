@@ -88,6 +88,9 @@ export function openAiFromModel(model) {
         'gpt-4-turbo-preview':      'gpt4-turbo',
         'gpt-4-0125-preview':       'gpt4-turbo',
         'open-mixtral-8x7b':        'mixtral',
+        'gpt-3.5-turbo':            'gpt3.5-turbo',
+        'llama3':                   'llama3-8b',
+        'llama3:instruct':          'llama3-8b',
         'mistralai/Mistral-7B-Instruct-v0.1': 'mixtral',
     }
     return mapping[model] ?? model
