@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
 
-import fs from 'fs'
-import path from 'path'
+/**
+ * This script is used to request ranking tasks from the ranking server that to rank then return the completed reason and score to the server.
+ */
 
 import { loadEnv, leftPart, rightPart } from './lib.mjs'
 import { rankAnswerRequest, rankAnswerResponse, RankTaskDto } from './requests.ts'

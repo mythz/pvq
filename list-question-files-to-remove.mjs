@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+/**
+ * This script will list all the (non-runtime) files in the questions directory that should be removed.
+ */
+
 import fs from "fs"
 import path from "path"
 

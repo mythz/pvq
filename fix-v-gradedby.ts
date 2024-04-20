@@ -1,5 +1,9 @@
 #!/usr/bin/env bun
 
+/**
+ * This script is used to fix the gradedBy field in the v.json files.
+ */
+
 import fs from "fs"
 import path from "path"
 import { rightPart } from "./lib.mjs"

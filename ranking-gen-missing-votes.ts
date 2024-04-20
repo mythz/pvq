@@ -1,4 +1,10 @@
 #!/usr/bin/env bun
+
+/**
+ * This script is used to generate a db of Ranking tasks to be served by ranking-server and processed by ranking-worker scripts
+ * TODO: gradedBy handling needs update after gradedBy is fixed in the v.json files with `fix-v-gradedby.ts`
+ */
+
 import { Database } from 'bun:sqlite'
 import fs from 'fs'
 import path from 'path'

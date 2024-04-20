@@ -2,6 +2,11 @@
 import { Database } from 'bun:sqlite'
 import fs from 'fs'
 
+/**
+ * This script is used to run a HTTP Server that serves ranking tasks to be ranked by client ranking-workers scripts
+ * TODO: gradedBy handling needs update after gradedBy is fixed in the v.json files with `fix-v-gradedby.ts`
+ */
+
 import { createErrorLog, rightPart, getAnswerBody, formatTime } from "./lib.mjs"
 
 const taskDbPath = './dist/tasks-missing.db'
