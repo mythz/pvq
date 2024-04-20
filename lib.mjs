@@ -652,3 +652,19 @@ export function getAnswerBody(json) {
     const obj = JSON.parse(json)
     return obj.body || obj?.choices?.length > 0 && obj.choices[0].message?.content || ''
 }
+
+export function createLog(script) {
+    let logStream = fs.createWriteStream(script + ".log", {flags:'a'})
+    return message => {
+        console.log(message)
+        logStream.write(message + "\n")
+    }
+}
+
+export function createErrorLog(script) {
+    let errorStream = fs.createWriteStream(script + ".error.log", {flags:'a'})
+    return message => {
+        console.error(message)
+        errorStream.write(message + "\n")
+    }
+}

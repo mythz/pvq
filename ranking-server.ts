@@ -2,7 +2,7 @@
 import { Database } from 'bun:sqlite'
 import fs from 'fs'
 
-import { rightPart, getAnswerBody, formatTime } from "./lib.mjs"
+import { createErrorLog, rightPart, getAnswerBody, formatTime } from "./lib.mjs"
 
 const taskDbPath = './dist/tasks-missing.db'
 
@@ -11,6 +11,8 @@ if (!fs.existsSync(taskDbPath)) {
 }
 
 const db = new Database(taskDbPath)
+
+const logError = createErrorLog(process.argv[1])
 
 const HomePage = `
 ## Usage:
@@ -55,12 +57,6 @@ const stmtDelete = db.prepare(`DELETE FROM RankTask WHERE Id = ?`)
 let total = db.prepare(`SELECT COUNT(*) AS count FROM RankTask`).get().count
 let completed = 0
 const startedAt = new Date().valueOf()
-
-let errorStream = fs.createWriteStream("ranking-server.error.log", {flags:'a'})
-function logError(message) {
-    console.error(message)
-    errorStream.write(message + "\n")
-}
 
 const Handlers = {
     "/": async (req:Request) => {
