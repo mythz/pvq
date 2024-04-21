@@ -24,51 +24,67 @@ function processDir(dir) {
     const subDirs = nodes.filter(x => !x.includes('.'))
 
     files.forEach(file => {
-        const vObj = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf-8'))
+        const vPath = path.join(dir, file)
+        try {
+            const vObj = JSON.parse(fs.readFileSync(vPath, 'utf-8'))
+            let shouldSave = false
 
-        const modelVotes = {}
-        if (vObj.modelVotes) {
-            Object.keys(vObj.modelVotes).forEach(model => {
-                modelVotes[modelToUser(model)] = vObj.modelVotes[model]
-            })
-        }
-        vObj.modelVotes = modelVotes
-
-        const modelReasons = {}
-        if (vObj.modelReasons) {
-            Object.keys(vObj.modelReasons).forEach(model => {
-                modelReasons[modelToUser(model)] = vObj.modelReasons[model]
-            })
-        }
-        vObj.modelReasons = modelReasons
-
-        const gradedBy = {}
-        if (vObj.gradedBy) {
-            const graders = Object.keys(vObj.gradedBy)
-            const isOldGradedBy = graders.length > 0 && Array.isArray(vObj.gradedBy[graders[0]])
-            // console.log(file, isOldGradedBy)
-            if (!isOldGradedBy) {
-                return
-            }
-            graders.forEach(grader => {
-                const graderUser = modelToUser(grader)
-                totalGraders[graderUser] = (totalGraders[graderUser] || 0) + vObj.gradedBy[grader].length
-                vObj.gradedBy[grader].forEach(answerId => {
-                    const userName = rightPart(answerId,'-')
-                    gradedBy[userName] = graderUser
+            const modelVotes = {}
+            if (vObj.modelVotes) {
+                Object.keys(vObj.modelVotes).forEach(model => {
+                    let score = vObj.modelVotes[model]
+                    if (!Number.isSafeInteger(score)) {
+                        if (isNaN(score)) {
+                            console.log(vPath, model, `changing score from ${score} to 0`)
+                            score = 0
+                        } else {
+                            console.log(vPath, model, `changing score from ${score} to ${Math.floor(score)}`)
+                            score = Math.floor(score)
+                        }
+                        shouldSave = true
+                    }
+                    modelVotes[modelToUser(model)] = score
                 })
-            })
-        }
-        vObj.gradedBy = gradedBy
-        if (++count % 1000 == 0) {
-            console.log(count, `${path.join(dir,file)}`)
-            console.log(vObj.gradedBy)
-        }
-        fs.writeFileSync(path.join(dir, file), JSON.stringify(vObj, null, 4))
+            }
+            vObj.modelVotes = modelVotes
 
-        Object.keys(vObj.modelVotes).forEach(model => modelVotesNames.add(model))
-        Object.keys(vObj.modelReasons).forEach(model => modelReasonsNames.add(model))
-        Object.keys(vObj.gradedBy).forEach(model => gradedByNames.add(model))
+            const modelReasons = {}
+            if (vObj.modelReasons) {
+                Object.keys(vObj.modelReasons).forEach(model => {
+                    modelReasons[modelToUser(model)] = vObj.modelReasons[model]
+                })
+            }
+            vObj.modelReasons = modelReasons
+
+            const gradedBy = {}
+            if (vObj.gradedBy) {
+                const entries = Object.entries(vObj.gradedBy)
+                const isOldGradedBy = entries.length > 0 && Array.isArray(Object.entries(entries)[0][1])
+                if (entries.length > 0 && !isOldGradedBy) {
+                    console.log(vPath, `upgrading old gradedBy`)
+                    Object.keys(vObj.gradedBy).forEach(grader => {
+                        const graderUser = modelToUser(grader)
+                        totalGraders[graderUser] = (totalGraders[graderUser] || 0) + vObj.gradedBy[grader].length
+                        vObj.gradedBy[grader].forEach(answerId => {
+                            const userName = rightPart(answerId,'-')
+                            gradedBy[userName] = graderUser
+                        })
+                    })
+                    shouldSave = true
+                    vObj.gradedBy = gradedBy
+                }
+            }
+            if (!shouldSave) return
+            console.log(++count, `${path.join(dir,file)}`, vObj.gradedBy)
+            fs.writeFileSync(vPath, JSON.stringify(vObj, null, 4))
+
+            Object.keys(vObj.modelVotes).forEach(model => modelVotesNames.add(model))
+            Object.keys(vObj.modelReasons).forEach(model => modelReasonsNames.add(model))
+            Object.keys(vObj.gradedBy).forEach(model => gradedByNames.add(model))
+
+        } catch (e) {
+            console.error(vPath, e)
+        }
     })
 
     subDirs.forEach(subDir => processDir(path.join(dir,subDir)))
