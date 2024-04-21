@@ -27,9 +27,9 @@ db.exec(`CREATE TABLE Stat (
     AnswerPath text not null,
     Length integer not null,
     MaxChar text null,
-    MaxCharCount text not null,
+    MaxCharCount integer not null,
     MaxWord text null,
-    MaxWordCount text not null,
+    MaxWordCount integer not null,
     NonAsciiCount integer not null,
     CharTotals text not null,
     WordTotals text not null
