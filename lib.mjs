@@ -73,27 +73,57 @@ export function openAiApiKey(model) {
     return apiKey
 }
 
+const userToModelMap = {
+    'phi':                'phi',
+    'gemma-2b':           'gemma:2b',
+    'qwen-4b':            'qwen:4b',
+    'codellama':          'codellama',
+    'llama3-8b':          'llama3:8b',
+    'gemma':              'gemma',
+    'deepseek-coder':     'deepseek-coder:6.7b',
+    'mistral':            'mistral',
+    'mixtral':            'mixtral',
+    'gemini-pro':         'gemini-pro',
+    'deepseek-coder-33b': 'deepseek-coder:33b',
+    'gpt4-turbo':         'gpt-4-turbo',
+    'gpt3.5-turbo':       'gpt-3.5-turbo',
+    'claude3-haiku':      'claude-3-haiku',
+    'claude3-sonnet':     'claude-3-sonnet',
+    'claude3-opus':       'claude-3-opus',
+    'command-r':          'command-r',
+    'command-r-plus':     'command-r-plus',
+}
+
+const pvqModelToUserMap = Object.entries(userToModelMap).reduce((acc, [k,v]) => { acc[v] = k; return acc }, {})
+
+const modelToUserMap = {
+    ...pvqModelToUserMap,
+    'claude-3-haiku-20240307':  'claude3-haiku',
+    'claude-3-sonnet-20240229': 'claude3-sonnet',
+    'claude-3-opus-20240229':   'claude3-opus',
+    'claude-3-haiku':           'claude3-haiku',
+    'claude-3-sonnet':          'claude3-sonnet',
+    'claude-3-opus':            'claude3-opus',
+    'deepseek-coder-6.7b':      'deepseek-coder',
+    'mixtral-8x7b-32768':       'mixtral',
+    'gemma-7b-it':              'gemma',
+    'gpt-4-turbo-preview':      'gpt4-turbo',
+    'gpt-4-0125-preview':       'gpt4-turbo',
+    'open-mixtral-8x7b':        'mixtral',
+    'gpt-3.5-turbo':            'gpt3.5-turbo',
+    'llama3':                   'llama3-8b',
+    'llama3:instruct':          'llama3-8b',
+    'mistralai/Mistral-7B-Instruct-v0.1': 'mixtral',
+}
+
+export function userToModel(model) { return userToModelMap[model] ?? model }
+export function modelToUser(model) { return openAiFromModel(model) }
+export function isModelUser(userName) { return !!userToModelMap[modelToUser(userName)] }
+export function isHumanUser(userName) { return !isModelUser(userName) }
+
 // Converts API model names to their model usernames in pvq.app
 export function openAiFromModel(model) {
-    const mapping = {
-        'claude-3-haiku-20240307':  'claude3-haiku',
-        'claude-3-sonnet-20240229': 'claude3-sonnet',
-        'claude-3-opus-20240229':   'claude3-opus',
-        'claude-3-haiku':           'claude3-haiku',
-        'claude-3-sonnet':          'claude3-sonnet',
-        'claude-3-opus':            'claude3-opus',
-        'deepseek-coder-6.7b':      'deepseek-coder',
-        'mixtral-8x7b-32768':       'mixtral',
-        'gemma-7b-it':              'gemma',
-        'gpt-4-turbo-preview':      'gpt4-turbo',
-        'gpt-4-0125-preview':       'gpt4-turbo',
-        'open-mixtral-8x7b':        'mixtral',
-        'gpt-3.5-turbo':            'gpt3.5-turbo',
-        'llama3':                   'llama3-8b',
-        'llama3:instruct':          'llama3-8b',
-        'mistralai/Mistral-7B-Instruct-v0.1': 'mixtral',
-    }
-    return mapping[model] ?? model
+    return modelToUserMap[model] ?? model
 }
 
 export function extractIdFromPath(path) {
