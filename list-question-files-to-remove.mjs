@@ -10,6 +10,7 @@ import path from "path"
 const dir = process.argv[2] || './questions'
 
 function processDir(dir) {
+    if (dir.includes('/profiles/')) return
     const nodes = fs.readdirSync(dir)
     const files = nodes.filter(x => x.includes('.'))
     const subDirs = nodes.filter(x => !x.includes('.'))
