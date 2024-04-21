@@ -13,6 +13,7 @@ data/*.db
 r2-data/
 .env
 dist/
+*.out
 
 
 # User-specific files
