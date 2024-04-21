@@ -149,8 +149,8 @@ public class Vote
     // Model (UserName) => Vote Reason
     public Dictionary<string, string> ModelReasons { get; set; } = [];
 
-    // "gradedBy": { "mixtral": ["1000-mistral","1000-gemma",..] }
-    public Dictionary<string, Dictionary<string, List<string>>> GradedBy { get; set; } = [];
+    // (UserName) => Grader Model
+    public Dictionary<string, string> GradedBy { get; set; } = [];
 }
 
 public class VoteReason
@@ -229,8 +229,8 @@ public class Meta
     // Model (UserName) => Vote Reason
     public Dictionary<string, string> ModelReasons { get; set; } = [];
 
-    // "gradedBy": { "mixtral": ["1000-mistral","1000-gemma",..] }
-    public Dictionary<string, Dictionary<string, List<string>>> GradedBy { get; set; } = [];
+    // (UserName) => Grader Model
+    public Dictionary<string, string> GradedBy { get; set; } = [];
 
     // RefId => Comments
     public Dictionary<string, List<Comment>> Comments { get; set; } = [];
