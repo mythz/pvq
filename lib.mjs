@@ -97,6 +97,10 @@ export function openAiFromModel(model) {
 }
 
 export function extractIdFromPath(path) {
+    if (!path) return null
+    if (path.startsWith('./')) path = path.substring(2)
+    if (path.startsWith('/')) path = path.substring(1)
+
     // remove 'questions' or 'meta' prefix
     let idPath = path.replace('questions/', '').replace('meta/', '')
     // remove '.json' suffix
