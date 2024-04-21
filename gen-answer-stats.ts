@@ -30,14 +30,16 @@ db.exec(`CREATE TABLE Stat (
     MaxCharCount integer not null,
     MaxWord text null,
     MaxWordCount integer not null,
+    AlphaNumCount integer not null,
+    NonAlphaCount integer not null,
     NonAsciiCount integer not null,
     CharTotals text not null,
     WordTotals text not null
 )`)
 
 const insert = db.prepare(
-    `INSERT INTO Stat (Id,PostId,AnswerPath,Length,MaxChar,MaxCharCount,MaxWord,MaxWordCount,NonAsciiCount,CharTotals,WordTotals) VALUES ` +
-    `($id,$postId,$answerPath,$length,$maxChar,$maxCharCount,$maxWord,$maxWordCount,$nonAsciiCount,$charTotals,$wordTotals)`)
+    `INSERT INTO Stat (Id,PostId,AnswerPath,Length,MaxChar,MaxCharCount,MaxWord,MaxWordCount,AlphaNumCount,NonAlphaCount,NonAsciiCount,CharTotals,WordTotals) VALUES ` +
+    `($id,$postId,$answerPath,$length,$maxChar,$maxCharCount,$maxWord,$maxWordCount,$alphaNumCount,$nonAlphaCount,$nonAsciiCount,$charTotals,$wordTotals)`)
 const tasks:any[] = []
 
 const logError = createErrorLog(process.argv[1], { reset:true })
@@ -71,6 +73,8 @@ function processDir(dir) {
                         maxCharCount: 0,
                         maxWord: '',
                         maxWordCount: 0,
+                        alphaNumCount: 0,
+                        nonAlphaCount: 0,
                         nonAsciiCount: 0,
                         charTotals: '{}',
                         wordTotals: '{}',

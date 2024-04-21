@@ -20,20 +20,25 @@ const nonAlphaNumericChars = getNonAlphaNumericAsciiChars()
 
 export function contentStats(body: string) {
     const allCharTotals = {}
+    let alphaNumCount = 0
+    let nonAlphaCount = 0
     let nonAsciiCount = 0
     const sb:string[] = []
     for (let i = 0; i < body.length; i++) {
         const point = body.codePointAt(i)
         const char = String.fromCodePoint(point ?? ' '.charCodeAt(0))
         if (alphaNumericChars.indexOf(char) >- 0) {
+            alphaNumCount++
             sb.push(char)
         } else {
-            nonAsciiCount++
             sb.push(' ')
-        }
-        if (nonAlphaNumericChars.indexOf(char) != -1) {
-            if (!allCharTotals[char]) allCharTotals[char] = 0
-            allCharTotals[char]++
+            if (nonAlphaNumericChars.indexOf(char) != -1) {
+                nonAlphaCount++
+                if (!allCharTotals[char]) allCharTotals[char] = 0
+                allCharTotals[char]++
+            } else {
+                nonAsciiCount++
+            }
         }
     }
     const cleanBody = sb.join('').toLowerCase()
@@ -81,6 +86,8 @@ export function contentStats(body: string) {
         maxCharCount,
         maxWord,
         maxWordCount,
+        alphaNumCount,
+        nonAlphaCount,
         nonAsciiCount,
         charTotals,
         wordTotals,
