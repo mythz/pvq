@@ -55,10 +55,17 @@ async function run() {
             const txt = await r.text()
             r = null
             // console.log('txt', txt)
-            const tasks = JSON.parse(txt) as RankTaskDto[]
-            if (tasks.length == 0) {
-                console.log('No more tasks')
-                process.exit(0)
+            let tasks:RankTaskDto[] = []
+            try {
+                tasks = JSON.parse(txt) as RankTaskDto[]
+                if (tasks.length == 0) {
+                    console.log('No more tasks')
+                    process.exit(0)
+                }
+            } catch(e) {
+                console.error('Failed to parse tasks', e)
+                console.log(txt)
+                continue
             }
 
             for (const task of tasks) {
