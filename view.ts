@@ -11,25 +11,18 @@ import { lastLeftPart, extractIdFromPath, lastRightPart, getAnswerBody, idParts,
 const target = process.argv[2] 
 const verbose = process.argv[3] === '-v' 
 
-import { contentStats } from './lib-view.ts'
+import { contentStats, getQuestionOrAnswerId } from './lib-view.ts'
 
-if (!target) {
-    console.log(`Usage: ./${lastRightPart(process.argv[1],'/')} <post-id|answer-id|path>`)
-    process.exit(1)
-}
-
-let id = target.includes('.') 
-    ? extractIdFromPath(target)?.toString()
-    : target
-
+const id = getQuestionOrAnswerId(target)
 if (!id) {
-    console.error('invalid id', target)
-    process.exit(1)
+    if (target) {
+        console.error('invalid id', target)
+        process.exit(1)
+    }
+    console.log(`Usage: ${lastRightPart(process.argv[1],'/')} <post-id|question-id|path>`)
+    process.exit(0)
 }
 
-if (target.includes('.a.') || target.includes('.h.')) {
-    id += `-${lastLeftPart(lastRightPart(target,'/')?.substring('000.a.'.length),'.')}`
-}
 
 const isAnswer = id.includes('-')
 

@@ -1,4 +1,5 @@
 import { stopWords } from './data.mjs'
+import { extractIdFromPath, lastLeftPart, lastRightPart } from './lib.mjs'
 
 export interface Stat {
     Id: string
@@ -14,7 +15,7 @@ export interface Stat {
     WordTotals: string
 }
 
-const checkChars = ['.',',','-','_',';','|','\n','\t','/','\\','`','-','+','[',']','(',')']
+const checkChars = ['.',',','-','_',';','|','\n','\t','/','\\','`','-','+','[',']','(',')','<','>']
 
 export function contentStats(body:string) {
     const allCharTotals = {}
@@ -44,11 +45,11 @@ export function contentStats(body:string) {
     let maxWord = ''
     let maxWordCount = 0
     let words = body.replace(/[\u{0080}-\u{FFFF}]/gu," ").split(/\s+/g)
+        .map(x => x.replace(/['"<>\\/`]/g,'').toLowerCase())
         .filter(x => x.length > 1 && !stopWords.has(x))
     const allWordTotals = {
     }
-    for (const rawWord of words) {
-        const word = rawWord.replace(/['"`]/g,'')
+    for (const word of words) {
         if (!allWordTotals[word]) allWordTotals[word] = 0
         allWordTotals[word]++
 
@@ -80,4 +81,20 @@ export function sortTotals(totals:{[key:string]:number}, take:number = 10) {
     return Object.keys(totals).sort((a,b) => totals[b] - totals[a])
         .slice(0,take)
         .map(key => ({key, value: totals[key]}))
+}
+
+export function getQuestionOrAnswerId(target:string) {
+    if (!target) return null
+    
+    let id = target.includes('.') 
+        ? extractIdFromPath(target)?.toString()
+        : target
+    
+    if (!id) return null
+    
+    if (target.includes('.a.') || target.includes('.h.')) {
+        return `-${lastLeftPart(lastRightPart(target,'/')?.substring('000.a.'.length),'.')}`
+    }
+    
+    return id
 }
