@@ -11,7 +11,7 @@ import { createErrorLog } from "./lib.mjs"
 
 const dir = process.argv[2] || './questions'
 
-const logError = createErrorLog(process.argv[1])
+const logError = createErrorLog(process.argv[1], { reset:true })
 
 let count = 0
 
@@ -28,13 +28,28 @@ function processDir(dir) {
                 logError(vPath + ' missing')
                 return
             }
-            if (count++ > 5) {
-                process.exit()
+
+            let metaObj = null
+            let vObj = null
+
+            try {
+                metaObj = JSON.parse(fs.readFileSync(metaPath, 'utf-8'))
+            } catch (e) {
+                logError(metaPath)
+                console.error(e)
+                return
             }
 
-            const metaObj = JSON.parse(fs.readFileSync(metaPath, 'utf-8'))
-            const vObj = JSON.parse(fs.readFileSync(vPath, 'utf-8'))
+            try {
+                vObj = JSON.parse(fs.readFileSync(vPath, 'utf-8'))
+            } catch (e) {
+                logError(vPath)
+                console.error(e)
+                return
+            }
+
             let { modelVotes, modelReasons, gradedBy } = vObj
+
             if (!modelVotes) modelVotes = {}
             if (!modelReasons) modelReasons = {}
             if (!gradedBy) gradedBy = {}
@@ -46,9 +61,11 @@ function processDir(dir) {
             metaObj.modelVotes = modelVotes
             metaObj.modelReasons = modelReasons
             metaObj.gradedBy = gradedBy
-            console.log(count, 'rewriting ' + metaPath)
-            console.log(metaObj)
-            console.log('------------------\n\n\n')
+            if (++count % 1000 === 0) {
+                console.log(count, 'rewriting ' + metaPath)
+                console.log(metaObj)
+                console.log('------------------\n\n\n')
+            }
             // fs.writeFileSync(metaPath, JSON.stringify(metaObj, null, 2))
         }
     })
