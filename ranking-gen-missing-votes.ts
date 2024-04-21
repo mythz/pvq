@@ -164,5 +164,5 @@ processDir(dir)
 const query = db.query('SELECT COUNT(*) FROM RankTask')
 console.log('RankTasks', query.get())
 
-insert.close()
+insert.finalize()
 db.close(true)
