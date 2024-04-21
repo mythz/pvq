@@ -66,7 +66,7 @@ function processDir(dir) {
                 console.log(metaObj)
                 console.log('------------------\n\n\n')
             }
-            // fs.writeFileSync(metaPath, JSON.stringify(metaObj, null, 2))
+            fs.writeFileSync(metaPath, JSON.stringify(metaObj, null, 2))
         }
     })
 
