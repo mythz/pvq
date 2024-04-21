@@ -93,7 +93,7 @@ export function getQuestionOrAnswerId(target:string) {
     if (!id) return null
     
     if (target.includes('.a.') || target.includes('.h.')) {
-        return `-${lastLeftPart(lastRightPart(target,'/')?.substring('000.a.'.length),'.')}`
+        return id + `-${lastLeftPart(lastRightPart(target,'/')?.substring('000.a.'.length),'.')}`
     }
     
     return id
