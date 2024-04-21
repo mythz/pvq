@@ -30,12 +30,13 @@ for (let i = 0; i < args.length; i++) {
 
 const db = new Database(dbPath)
 
-const select = 'Id, PostId, Length, MaxCharCount, MaxWord, MaxWordCount, NonAsciiCount'
+const select = cmds.select || 'Id, PostId, Length, MaxCharCount, MaxWord, MaxWordCount, NonAsciiCount'
 const orderBy = cmds.orderBy || cmds.orderByDesc ? `${cmds.orderByDesc} DESC` : 'Length DESC'
 const where = cmds.where || '1=1'
 const skip = cmds.skip || 0
 const take = cmds.take || 10
-const stmt = db.prepare(`SELECT ${select} FROM Stat WHERE ${where} ORDER BY ${orderBy} LIMIT ${take} OFFSET ${skip}`)
+const groupBy = cmds.groupBy ? 'GROUP BY ' + cmds.groupBy : ''
+const stmt = db.prepare(`SELECT ${select} FROM Stat WHERE ${where} ${groupBy} ORDER BY ${orderBy} LIMIT ${take} OFFSET ${skip}`)
 const rows = stmt.all()
 
 Inspect.printDumpTable(rows)
