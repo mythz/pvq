@@ -653,7 +653,7 @@ export function emptyVFile() {
 
 export function getAnswerBody(json) {
     if (!json) return ''
-    const obj = JSON.parse(json)
+    const obj = typeof json == 'string' ? JSON.parse(json) : json
     return obj.body || obj?.choices?.length > 0 && obj.choices[0].message?.content || ''
 }
 
@@ -665,8 +665,12 @@ export function createLog(script) {
     }
 }
 
-export function createErrorLog(script) {
-    let errorStream = fs.createWriteStream(script + ".error.log", {flags:'a'})
+export function createErrorLog(script, { reset } = {}) {
+    const errorFile = script + ".error.log"
+    if (reset && fs.existsSync(errorFile)) {
+        fs.unlinkSync(errorFile)
+    }
+    let errorStream = fs.createWriteStream(errorFile, {flags:'a'})
     return message => {
         console.error(message)
         errorStream.write(message + "\n")
