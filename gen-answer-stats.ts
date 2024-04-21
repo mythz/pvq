@@ -8,7 +8,7 @@ import { Database } from 'bun:sqlite'
 import fs from 'fs'
 import path from 'path'
 import { lastLeftPart, extractIdFromPath, createErrorLog, getAnswerBody } from "./lib.mjs"
-import { contentStats, Stat } from './lib-view.ts'
+import { contentStats, toDbParams, Stat } from './lib-view.ts'
 
 const dir = process.argv[2] || './questions'
 
@@ -62,7 +62,7 @@ function processDir(dir) {
                 const id = `${postId}-${userName}`
                 const body = getAnswerBody(answerJson)
                 if (!body || body.trim().length === 0) {
-                    insert.run({
+                    insert.run(toDbParams({
                         id,
                         postId,
                         answerPath,
@@ -74,7 +74,7 @@ function processDir(dir) {
                         nonAsciiCount: 0,
                         charTotals: '{}',
                         wordTotals: '{}',
-                    })
+                    }))
                     logError(`${answerPath} empty body`)
                     return
                 }
@@ -85,10 +85,7 @@ function processDir(dir) {
                     answerPath,
                     ...stats,
                 }
-                const dbRow = {}
-                for (const key in row) {
-                    dbRow['$' + key] = row[key]
-                }
+                const dbRow = toDbParams(row)
                 dbRow['$charTotals'] = JSON.stringify(stats.charTotals)
                 dbRow['$wordTotals'] = JSON.stringify(stats.charTotals)
                 try {
@@ -104,7 +101,7 @@ function processDir(dir) {
                 }
             } catch(e) {
                 logError(`${answerPath} ${e.message}`)
-                console.log(answerPath)
+                console.log(answerPath, e.stack)
             }
         }
     })

@@ -121,3 +121,11 @@ export function characterRange(startChar:string, endChar:string) {
 export function getNonAlphaNumericAsciiChars() {
     return '\r\n\t' + characterRange('!', '/') + characterRange(':', '@') + characterRange('[', '`') + characterRange('{', '~');
 }
+
+export function toDbParams(row:any) { 
+    const dbRow = {}
+    for (const key in row) {
+        dbRow['$' + key] = row[key]
+    }
+    return dbRow
+}
