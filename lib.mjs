@@ -14,21 +14,23 @@ export function openAiDefaults() {
 }
 
 const ProviderApis = {
-    'groq':      apiPath => `https://api.groq.com/openai${apiPath}`,
-    'mistral':   apiPath => `https://api.mistral.ai${apiPath}`,
-    'openai':    apiPath => `https://api.openai.com${apiPath}`,
-    'anthropic': apiPath => `https://api.anthropic.com/v1/messages`,
-    'google':    apiPath => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
-    'anyscale':  apiPath => `https://api.endpoints.anyscale.com${apiPath}`,
+    'openrouter': apiPath => `https://openrouter.ai/api${apiPath}`,
+    'groq':       apiPath => `https://api.groq.com/openai${apiPath}`,
+    'mistral':    apiPath => `https://api.mistral.ai${apiPath}`,
+    'openai':     apiPath => `https://api.openai.com${apiPath}`,
+    'anthropic':  apiPath => `https://api.anthropic.com/v1/messages`,
+    'google':     apiPath => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+    'anyscale':   apiPath => `https://api.endpoints.anyscale.com${apiPath}`,
 }
 const ProviderApiKeyVars = {
-    'groq':      'GROQ_API_KEY',
-    'mistral':   'MISTRAL_API_KEY',
-    'openai':    'OPENAI_API_KEY',
-    'google':    'GOOGLE_API_KEY',
-    'anthropic': 'ANTHROPIC_API_KEY',
-    'cohere':    'COHERE_API_KEY',
-    'anyscale':  'ANYSCALE_API_KEY',
+    'openrouter': 'OPENROUTER_API_KEY',
+    'groq':       'GROQ_API_KEY',
+    'mistral':    'MISTRAL_API_KEY',
+    'openai':     'OPENAI_API_KEY',
+    'google':     'GOOGLE_API_KEY',
+    'anthropic':  'ANTHROPIC_API_KEY',
+    'cohere':     'COHERE_API_KEY',
+    'anyscale':   'ANYSCALE_API_KEY',
 }
 
 export function openAiUrl(model,port) {
@@ -79,6 +81,7 @@ const userToModelMap = {
     'qwen-4b':            'qwen:4b',
     'codellama':          'codellama',
     'llama3-8b':          'llama3:8b',
+    'llama70-8b':         'llama70:8b',
     'gemma':              'gemma',
     'deepseek-coder':     'deepseek-coder:6.7b',
     'mistral':            'mistral',
@@ -93,8 +96,26 @@ const userToModelMap = {
     'command-r':          'command-r',
     'command-r-plus':     'command-r-plus',
 }
-
 const pvqModelToUserMap = Object.entries(userToModelMap).reduce((acc, [k,v]) => { acc[v] = k; return acc }, {})
+
+const modelToOpenRouter = {
+    'codellama':       'meta-llama/llama-3-8b-instruct',
+    'llama3:8b':       'meta-llama/llama-3-8b-instruct',
+    'llama3:70b':      'meta-llama/llama-3-70b-instruct',
+    'gemma':           'google/gemma-7b-it:free',
+    'mixtral':         'mistralai/mixtral-8x7b-instruct',
+    'mistral':         'mistralai/mistral-7b-instruct:free',
+    'gemini-pro':      'google/gemini-pro-1.5',
+    'gpt3.5-turbo':    'openai/gpt-3.5-turbo-0125',
+    'gpt4-turbo':      'openai/gpt-4-turbo',
+    'command-r':       'cohere/command-r',
+    'command-r-plus':  'cohere/command-r-plus',
+    'claude-3-haiku':  'anthropic/claude-3-haiku',
+    'claude-3-sonnet': 'anthropic/claude-3-sonnet',
+    'claude-3-opus':   'anthropic/claude-3-opus',
+    'wizardlm':        'microsoft/wizardlm-2-8x22b',
+}
+const openRouterToModel = Object.entries(modelToOpenRouter).reduce((acc, [k,v]) => { acc[v] = k; return acc }, {})
 
 const modelToUserMap = {
     ...pvqModelToUserMap,
@@ -114,6 +135,10 @@ const modelToUserMap = {
     'llama3':                   'llama3-8b',
     'llama3:instruct':          'llama3-8b',
     'mistralai/Mistral-7B-Instruct-v0.1': 'mixtral',
+    // open router
+    ...openRouterToModel,
+    'google/gemma-7b-it':                 'gemma',
+    'mistralai/mistral-7b-instruct':      'mistral',
 }
 
 export function userToModel(model) { return userToModelMap[model] ?? model }
@@ -146,7 +171,9 @@ export function extractIdFromPath(path) {
 export function openAiModel(model) {
     let provider = ModelProviders[model]
     // console.log('provider', provider, model, ModelProviders)
-    if (provider === 'groq') {
+    if (provider === 'openrouter') {
+        return modelToOpenRouter[model] ?? model
+    } else if (provider === 'groq') {
         const mapping = {
             mixtral: `mixtral-8x7b-32768`,
             gemma: `gemma-7b-it`
@@ -267,6 +294,14 @@ async function openAi(opt) {
     // console.log('headers', headers)
     const messages = opt.messages ?? []
 
+    const openAiBody = {
+        messages,
+        temperature,
+        model: openAiModel(model),
+        max_tokens,
+        stream: false,
+    }
+
     let provider = ModelProviders[model]
     if (provider === 'google') {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`
@@ -280,24 +315,22 @@ async function openAi(opt) {
                         {"text": content}
                     ]
                 }],
-                safetySettings: [
-                    {
-                        category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-                        threshold: "BLOCK_ONLY_HIGH"
-                    },
-                    {
-                        category: "HARM_CATEGORY_HATE_SPEECH",
-                        threshold: "BLOCK_ONLY_HIGH"
-                    },
-                    {
-                        category: "HARM_CATEGORY_HARASSMENT",
-                        threshold: "BLOCK_ONLY_HIGH"
-                    },
-                    {
-                        category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                        threshold: "BLOCK_ONLY_HIGH"
-                    },
-                ],
+                safetySettings: [{
+                    category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                    threshold: "BLOCK_ONLY_HIGH"
+                },
+                {
+                    category: "HARM_CATEGORY_HATE_SPEECH",
+                    threshold: "BLOCK_ONLY_HIGH"
+                },
+                {
+                    category: "HARM_CATEGORY_HARASSMENT",
+                    threshold: "BLOCK_ONLY_HIGH"
+                },
+                {
+                    category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    threshold: "BLOCK_ONLY_HIGH"
+                }],
                 generationConfig: {
                     temperature: temperature,
                     maxOutputTokens: max_tokens,
@@ -305,7 +338,8 @@ async function openAi(opt) {
             }),
             // signal: AbortSignal.timeout(60 * 1000), // Doesn't work
         })
-    } else if (provider === 'cohere') {
+    } 
+    if (provider === 'cohere') {
         const url = `https://api.cohere.ai/v1/chat`
         headers['Authorization'] = `Bearer ${apiKey}`
         // Change messages roles from "assistant" to "CHATBOT","user" to "USER" and "system" to "SYSTEM"
@@ -334,7 +368,8 @@ async function openAi(opt) {
             body: JSON.stringify(body),
             // signal: AbortSignal.timeout(60 * 1000),
         })
-    } else if (provider === 'anthropic') {
+    }
+    if (provider === 'anthropic') {
         if (apiKey) {
             headers['x-api-key'] = apiKey
         }
@@ -360,28 +395,34 @@ async function openAi(opt) {
             body: JSON.stringify(body),
             // signal: AbortSignal.timeout(60 * 1000),
         })
-    } else {
-        if (apiKey) {
-            headers['Authorization'] = `Bearer ${apiKey}`
-        }
-        if (systemPrompt) messages.push(systemPrompt)
-        messages.push({ role: 'user', content })
-
-        const url = openAiUrl(model,port)
-        console.log(`POST ${url}`)
-        return await fetch(url, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-                messages,
-                temperature,
-                model:openAiModel(model),
-                max_tokens,
-                stream: false,
-            }),
-            // signal: AbortSignal.timeout(60 * 1000),
-        })
     }
+    if (provider === 'openrouter') {
+        openAiBody.provider = {
+            require_parameters: true,
+        }
+        openAiBody.response_format = {
+            type: 'json_object'
+        }
+        const providers = process.env.OPENROUTER_PROVIDERS?.split(',') ?? []
+        if (providers.length > 0) {
+            openAiBody.provider.order = providers
+        }
+    }
+
+    if (apiKey) {
+        headers['Authorization'] = `Bearer ${apiKey}`
+    }
+    if (systemPrompt) messages.push(systemPrompt)
+    messages.push({ role: 'user', content })
+
+    const url = openAiUrl(model,port)
+    console.log(`POST ${url}`)
+    return await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(openAiBody),
+        // signal: AbortSignal.timeout(60 * 1000),
+    })
 }
 
 export function useClient() {

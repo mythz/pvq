@@ -9,8 +9,8 @@ async function processArgs(args) {
     const content = args[2] || ''
 
     const { getJson, send, openAi } = useClient()
-    const API_KEY = process.env.ANYSCALE_API_KEY
-    const BASE_URL = `https://api.endpoints.anyscale.com/v1`
+    const API_KEY = process.env.OPENROUTER_API_KEY
+    const BASE_URL = `https://openrouter.ai/api/v1`
 
     if (cmd === 'chat') {
         // USAGE: ./anyscale.mjs mixtral chat "How do I install nodejs?"
@@ -63,11 +63,12 @@ async function processArgs(args) {
             console.log(`Unknown command: ${cmd}`)
         }
 
+        const script = process.argv[1]
         console.log(['\nUSAGE:',            
             `\n# Use chat API`,
-            `  ./anyscale.mjs "mistralai/Mistral-7B-Instruct-v0.1" chat "Write a function to reverse a string in javascript."`,
+            `  ./${script} "mistralai/mistral-7b-instruct:free" chat "Write a function to reverse a string in javascript."`,
             `\n# Use Open AI API`,
-            `  ./anyscale.mjs mixtral openai "How do I install nodejs?"`].join('\n') + '\n')
+            `  ./${script} mixtral openai "How do I install nodejs?"`].join('\n') + '\n')
     }
 }
 
