@@ -49,29 +49,7 @@ public static class Regenerate
         if (meta.Id == default)
             meta.Id = post.Id;
         meta.ModifiedDate = now;
-
-        // Read in the `.v.` (votes) file for this post
-        var metaPath = baseDir.FullName.Replace("/questions/", "/meta/");
-        var votesFile = Path.Join(metaPath, $"{filePrefix}.v.json");
-        var modelVotesExists = File.Exists(votesFile);
-        var modelVote = new Vote { ModelVotes = new() };
-        try
-        {
-            if (modelVotesExists)
-            {
-                var votesJson = await File.ReadAllTextAsync(votesFile);
-                modelVote = votesJson.FromJson<Vote>();
-            }
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine($"Error reading votes file {votesFile} : {e.Message}\n...");
-        }
-
-        meta.ModelVotes = modelVote.ModelVotes;
-        meta.ModelReasons = modelVote.ModelReasons;
-        meta.GradedBy = modelVote.GradedBy;
-
+        
         // Question
         var liveStats = new List<StatTotals>
         {
@@ -88,7 +66,7 @@ public static class Regenerate
             },
         };
 
-        foreach (var vote in modelVote.ModelVotes)
+        foreach (var vote in meta.ModelVotes)
         {
             var answerId = postId + "-" + vote.Key;
             var answerStats = new StatTotals
@@ -104,8 +82,6 @@ public static class Regenerate
         }
 
         meta.StatTotals = liveStats;
-        meta.ModelVotes = modelVote.ModelVotes;
-        meta.ModelReasons = modelVote.ModelReasons;
 
         return meta;
     }
