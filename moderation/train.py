@@ -158,7 +158,7 @@ original_test_data = pd.read_json('./data/training_data.jsonl', lines=True)
 
 # Grab random subset of test data
 test_data = original_test_data[original_test_data['NeedsModeration'] == True].sample(frac=1).reset_index(drop=True)
-test_data = pd.concat([test_data, original_test_data[original_test_data['NeedsModeration'] == False].sample(frac=0.05).reset_index(drop=True)], ignore_index=True)
+test_data = pd.concat([test_data, original_test_data[original_test_data['NeedsModeration'] == False].sample(frac=1).reset_index(drop=True)], ignore_index=True)
 
 # Mix in some known bad data
 # test_data = pd.concat([test_data, eval_bad_data, eval_bad_data,eval_bad_data,
@@ -174,7 +174,7 @@ print('Percentage of bad data in test data:', test_data['NeedsModeration'].mean(
 known_labels = test_data.copy()
 
 # Take a small sample of original data to mix in
-original_test_data = original_test_data.sample(frac=0.05).reset_index(drop=True)
+original_test_data = original_test_data.sample(frac=0.25).reset_index(drop=True)
 clear_data(original_test_data)
 
 # Drop the 'NeedsModeration' column
