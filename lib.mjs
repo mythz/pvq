@@ -747,3 +747,11 @@ export function createErrorLog(script, { reset } = {}) {
         errorStream.write(message + "\n")
     }
 }
+
+export function generateSummary(body) {
+    let summary = body.replace(/<[^>]*>?/gm, '') //naive html stripping
+    summary = summary.replace(/```[^`]+```/g, '') // remove code blocks
+    summary = summary.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim() // collapse new lines and spaces
+    summary = summary.length > 200 ? summary.substring(0, 200) + '...' : summary
+    return summary
+}

@@ -3,7 +3,7 @@
 import fs from "fs"
 import path from "path"
 import { toLocalISOString } from "./@servicestack/client"
-import { createErrorLog, extractIdFromPath, idParts, lastLeftPart } from "./lib.mjs"
+import { createErrorLog, extractIdFromPath, generateSummary, lastLeftPart } from "./lib.mjs"
 
 const dir = process.argv[2] || 'questions'
 
@@ -84,10 +84,7 @@ function processDir(dir:string) {
             return
         }
 
-        let summary = answerBody.replace(/<[^>]*>?/gm, '') //naive html stripping
-        summary = summary.replace(/```[^`]+```/g, '') // remove code blocks
-        summary = summary.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim() // collapse new lines and spaces
-        summary = summary.length > 200 ? summary.substring(0, 200) + '...' : summary
+        let summary = generateSummary(answerBody)
 
         const answer:Post = {
             id: 0,
