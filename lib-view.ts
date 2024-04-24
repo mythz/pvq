@@ -1,6 +1,37 @@
 import { stopWords } from './data.mjs'
 import { extractIdFromPath, lastLeftPart, lastRightPart } from './lib.mjs'
 
+export interface Meta {
+    id: number
+    modelVotes: { [index: string]: number }
+    modelReasons: { [index: string]: string }
+    gradedBy: { [index: string]: string }
+    comments: { [index: string]: Comment[] }
+    statTotals: StatTotals[]
+    modifiedDate: string;
+}
+
+export interface StatTotals
+{
+    id: string;
+    postId: number;
+    createdBy?: string;
+    favoriteCount: number;
+    viewCount: number;
+    upVotes: number;
+    downVotes: number;
+    startingUpVotes: number;
+}
+
+export interface Comment
+{
+    body: string
+    created: number
+    createdBy: string
+    upVotes?: number
+    reports?: number
+}
+
 export interface Stat {
     Id: string
     PostId: number
@@ -13,6 +44,23 @@ export interface Stat {
     NonAsciiCount: number
     CharTotals: string
     WordTotals: string
+}
+
+export interface Post {
+    id: number //0
+    postTypeId: number //2
+    parentId: number // postid
+    summary: string
+    creationDate: string //date
+    createdBy: string //username
+    body: string //answer body
+    refId: string //answerId: postid-username
+}
+
+export type Choice = { index: number, message: { role: string, content: string } }
+export interface OpenAIAnswer {    
+    created: number
+    choices: Choice[]
 }
 
 const alphaNumericChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_'

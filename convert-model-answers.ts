@@ -1,5 +1,10 @@
 #!/usr/bin/env bun
 
+/**
+ * Convert .a. Model Answers in OpenAi Response Format to .h. answers in Post format
+ */
+
+import type { Post, OpenAIAnswer } from "./lib-view"
 import fs from "fs"
 import path from "path"
 import { toLocalISOString } from "./@servicestack/client"
@@ -12,22 +17,6 @@ if (!dir || !fs.existsSync(dir)) {
     process.exit()
 }
 
-interface Post {
-    id: number //0
-    postTypeId: number //2
-    parentId: number // postid
-    summary: string
-    creationDate: string //date
-    createdBy: string //username
-    body: string //answer body
-    refId: string //answerId: postid-username
-}
-
-type Choice = { index: number, message: { role: string, content: string } }
-interface OpenAIAnswer {    
-    created: number
-    choices: Choice[]
-}
 
 const logError = createErrorLog(process.argv[1])
 
