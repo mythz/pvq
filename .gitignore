@@ -8,6 +8,7 @@ questions/
 data/*_posts.sql
 data/data_post.sql
 data/*.db
+data/*.json
 /data/highest-score-answers.json
 .idea/
 r2-data/
