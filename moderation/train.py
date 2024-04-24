@@ -33,21 +33,43 @@ existing_data['Label'] = existing_data['NeedsModeration'].apply(lambda x: 'BAD' 
 
 def clear_data(df):
     # Remove columns that we don't need like PostId_x,PostId_y,FavoriteCount,ViewCount,DownVotes,StartingUpVotes,CreatedBy,AnswerPath,PostId,Id
-    df.drop(
-        ['PostId_x', 'PostId_y', 'FavoriteCount', 'ViewCount', 'DownVotes', 'StartingUpVotes', 'CreatedBy',
-         'AnswerPath', 'PostId', 'Id'], axis=1, inplace=True)
-    df.drop(['Name', 'CharTotals', 'WordTotals'], axis=1, inplace=True)
+    # check if column exists before dropping each
+    if 'PostId_x' in df.columns:
+        df.drop('PostId_x', axis=1, inplace=True)
+    if 'PostId_y' in df.columns:
+        df.drop('PostId_y', axis=1, inplace=True)
+    if 'FavoriteCount' in df.columns:
+        df.drop('FavoriteCount', axis=1, inplace=True)
+    if 'ViewCount' in df.columns:
+        df.drop('ViewCount', axis=1, inplace=True)
+    if 'DownVotes' in df.columns:
+        df.drop('DownVotes', axis=1, inplace=True)
+    if 'StartingUpVotes' in df.columns:
+        df.drop('StartingUpVotes', axis=1, inplace=True)
+    if 'CreatedBy' in df.columns:
+        df.drop('CreatedBy', axis=1, inplace=True)
+    if 'AnswerPath' in df.columns:
+        df.drop('AnswerPath', axis=1, inplace=True)
+    if 'PostId' in df.columns:
+        df.drop('PostId', axis=1, inplace=True)
+    if 'Name' in df.columns:
+        df.drop('Name', axis=1, inplace=True)
+    if 'CharTotals' in df.columns:
+        df.drop('CharTotals', axis=1, inplace=True)
+    if 'WordTotals' in df.columns:
+        df.drop('WordTotals', axis=1, inplace=True)
 
 
 clear_data(existing_data)
 
 print('Prepped data...')
 # Randomize the order of the training data, and slice the first 80% for training and the remaining 20% for validation
-existing_data = existing_data.sample(frac=1).reset_index(drop=True)
-random_data = existing_data[:10000]
-known_bad_data = existing_data[existing_data['NeedsModeration'] == True]
-known_bad_data = known_bad_data.sample(frac=0.5).reset_index(drop=True)
-eval_bad_data = known_bad_data.sample(frac=0.5).reset_index(drop=True)
+random_data = existing_data.sample(frac=0.20).reset_index(drop=True)
+# Split known bad data in half using existing_data['NeedsModeration'] == True] and `sample`, save to `known_bad_data` and `eval_bad_data`
+all_known_bad_data = existing_data[existing_data['NeedsModeration'] == True].copy()
+eval_bad_data = all_known_bad_data.sample(frac=0.2).reset_index(drop=True)
+# Use eval_bad_data index to drop from all_known_bad_data
+known_bad_data = all_known_bad_data.drop(all_known_bad_data.index[eval_bad_data.index])
 
 existing_data = pd.concat([random_data, known_bad_data], ignore_index=True)
 
@@ -56,6 +78,9 @@ existing_data = existing_data.sample(frac=1).reset_index(drop=True)
 
 # Log out the percentage of data that is bad in the training data
 print('Percentage of bad data:', existing_data['NeedsModeration'].mean())
+
+# Drop the 'NeedsModeration' column
+existing_data.drop('NeedsModeration', axis=1, inplace=True)
 
 print('Data prepped...')
 
@@ -71,15 +96,16 @@ num_classes = len(label_dict)
 
 # Create a new column with a concatenated string of the metadata fields
 # Do this by enumerating the columns and concatenating them with '<sep>{column_name}={column_value}'
-existing_data['Input'] = existing_data.apply(lambda row: '<sep>'.join(f'{col}={row[col]}\n' for col in existing_data.columns), axis=1)
+existing_data['Input'] = existing_data.apply(lambda row: '<sep>'.join(f'{col}={row[col]}\n' for col in existing_data.columns if col != 'Id'), axis=1)
 
 print('Tokenizing and padding...')
-# Tokenize and pad descriptions
-tokenized_descriptions = [tokenizer.encode(desc, return_tensors='tf').numpy()[0] for desc in existing_data['Input']]
-padded_descriptions = pad_sequences(tokenized_descriptions, padding='post')
 
 # Assuming 'max_length' is the length to which sequences were padded during training
-max_length = padded_descriptions.shape[1]  # Replace this with the actual length from training
+max_length = 256
+
+# Tokenize and pad descriptions
+tokenized_descriptions = [tokenizer.encode(desc, return_tensors='tf').numpy()[0] for desc in existing_data['Input']]
+padded_descriptions = pad_sequences(tokenized_descriptions, padding='post', maxlen=max_length)
 
 
 # Convert labels to indices and then to one-hot vectors
@@ -128,33 +154,46 @@ else:
     model.save('./data/moderation_model.h5')
 
 # Test the model
-test_data = pd.read_json('./data/training_data.jsonl', lines=True)
+original_test_data = pd.read_json('./data/training_data.jsonl', lines=True)
 
 # Grab random subset of test data
-test_data = test_data.sample(frac=0.08).reset_index(drop=True)
+test_data = original_test_data[original_test_data['NeedsModeration'] == True].sample(frac=1).reset_index(drop=True)
+test_data = pd.concat([test_data, original_test_data[original_test_data['NeedsModeration'] == False].sample(frac=0.05).reset_index(drop=True)], ignore_index=True)
 
 # Mix in some known bad data
-test_data = pd.concat([test_data, eval_bad_data, eval_bad_data,eval_bad_data,eval_bad_data], ignore_index=True)
+# test_data = pd.concat([test_data, eval_bad_data, eval_bad_data,eval_bad_data,
+#                        eval_bad_data,eval_bad_data,eval_bad_data,eval_bad_data], ignore_index=True)
 test_data = test_data.sample(frac=1).reset_index(drop=True)
 
 # Log percentage of bad data in test data
 print('Percentage of bad data in test data:', test_data['NeedsModeration'].mean())
 
-clear_data(test_data)
+# clear_data(test_data)
 
 # Copy test_data with known labels
 known_labels = test_data.copy()
+
+# Take a small sample of original data to mix in
+original_test_data = original_test_data.sample(frac=0.05).reset_index(drop=True)
+clear_data(original_test_data)
+
 # Drop the 'NeedsModeration' column
-test_data.drop('NeedsModeration', axis=1, inplace=True)
+if 'NeedsModeration' in test_data.columns:
+    test_data.drop('NeedsModeration', axis=1, inplace=True)
 
 # Create the empty Label column
 test_data['Label'] = np.nan
 
 # Filter test_data where the 'Label' column is empty and not NaN
-test_data = test_data[test_data['Label'].isnull()]
+# test_data = test_data[test_data['Label'].isnull()]
 
-# Create a new column with a concatenated string of the date, description, and amount
-test_data['Input'] = test_data.apply(lambda row: '<sep>'.join(f'{col}={row[col]}\n' for col in test_data.columns), axis=1)
+clear_data(test_data)
+
+# Create a new column with a concatenated string of the metadata fields, excluding the 'Id' column
+test_data['Input'] = test_data.apply(lambda row: '<sep>'.join(f'{col}={row[col]}\n' for col in test_data.columns if col != 'Id'), axis=1)
+
+# Size of test_data
+print('Test data shape:', test_data.shape)
 
 # Tokenize and pad descriptions for test data
 tokenized_test_descriptions = [tokenizer.encode(desc, return_tensors='tf').numpy()[0] for desc in test_data['Input']]
