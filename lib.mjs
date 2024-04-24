@@ -151,6 +151,12 @@ export function openAiFromModel(model) {
     return modelToUserMap[model] ?? model
 }
 
+export function userNameFromPath(path) {
+    const file = path.includes('/') ? lastRightPart(path, '/') : path
+    const userName = lastLeftPart(file.substring('000.h.'.length), '.')
+    return userName
+}
+
 export function extractIdFromPath(path) {
     if (!path) return null
     if (path.startsWith('./')) path = path.substring(2)

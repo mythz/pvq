@@ -1,5 +1,10 @@
 #!/usr/bin/env bun
 
+/*
+ * Checks for and fixes missing fields in .h. answers and moves bad answers to /bad folder
+ */
+
+import type { Post } from "./lib-view"
 import fs from "fs"
 import path from "path"
 import { toCamelCase, toLocalISOString } from "./@servicestack/client"
@@ -10,17 +15,6 @@ const dir = process.argv[2] || 'questions'
 if (!dir || !fs.existsSync(dir)) {
     console.log('dir does not exist', dir)
     process.exit()
-}
-
-interface Post {
-    id: number //0
-    postTypeId: number //2
-    parentId: number // postid
-    summary: string
-    creationDate: string //date
-    createdBy: string //username
-    body: string //answer body
-    refId: string //answerId: postid-username
 }
 
 const logError = createErrorLog(process.argv[1], { reset:true })
