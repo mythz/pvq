@@ -85,7 +85,7 @@ function processDir(dir:string) {
             answer.refId = `${answer.parentId}-${userName}`
             shouldUpdate = true
         }
-        if (!answer.summary) {
+        if (!answer.summary || answer.summary.length <= 20) {
             answer.summary = generateSummary(answer.body)
             shouldUpdate = true
         }

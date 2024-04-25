@@ -755,9 +755,14 @@ export function createErrorLog(script, { reset } = {}) {
 }
 
 export function generateSummary(body) {
-    let summary = body.replace(/<[^>]*>?/gm, '') //naive html stripping
-    summary = summary.replace(/```[^`]+```/g, '') // remove code blocks
-    summary = summary.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim() // collapse new lines and spaces
+    let withoutHtml = body.replace(/<[^>]*>?/gm, '') //naive html stripping
+    let withoutCode = withoutHtml.replace(/```[^`]+```/g, '') // remove code blocks
+    let summary = withoutCode.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim() // collapse new lines and spaces
+
+    if (summary.length < 20) {
+        summary = withoutHtml.replace(/```/g, ' ').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim()
+    }
+
     summary = summary.length > 200 ? summary.substring(0, 200) + '...' : summary
     return summary
 }
