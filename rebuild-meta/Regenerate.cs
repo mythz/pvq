@@ -141,25 +141,29 @@ public class VoteReason
 public class StatTotals
 {
     // PostId (Question) or PostId-UserName (Answer)
-    [PrimaryKey] public required string Id { get; set; }
-
-    [Index] public int PostId { get; set; }
-
+    public string Id { get; set; }
+    
+    [Index]
+    public int PostId { get; set; }
+    
+    [Index]
+    public string? CreatedBy { get; set; }
+    
     public int FavoriteCount { get; set; }
-
+    
     // post.ViewCount + Sum(PostView.PostId)
     public int ViewCount { get; set; }
-
+    
     // Sum(Vote(PostId).Score > 0) 
     public int UpVotes { get; set; }
-
+    
     // Sum(Vote(PostId).Score < 0) 
     public int DownVotes { get; set; }
-
+    
     // post.Score || Meta.ModelVotes[PostId] (Model Ranking Score)
     public int StartingUpVotes { get; set; }
-
-    [Index] [StringLength(128)] public string? CreatedBy { get; set; }
+    
+    public DateTime? LastUpdated { get; set; }
 
     public int GetScore() => StartingUpVotes + UpVotes - DownVotes;
 
