@@ -25,7 +25,8 @@ var questionsDir = "../questions/";
 var allFiles = Directory.GetFiles(questionsDir, "*.json", SearchOption.AllDirectories);
 Console.WriteLine($"Found {allFiles.Length} files");
 
-var existingIds = new HashSet<int>();
+var existingIds = new HashSet<string>();
+var answerIds = new HashSet<int>();
 var nextId = 100_000_000;
 var minDate = new DateTime(2008,08,1);
 
@@ -44,8 +45,9 @@ foreach (var allFile in allFiles)
         if (fileType == "json")
         {
             var post = ToPost(file);
-            if (existingIds.Contains(post.Id)) continue;
-            existingIds.Add(post.Id);
+            var refId = post.RefId ?? $"{post.Id}";
+            if (!existingIds.Add(refId)) 
+                continue;
             log($"Adding Question {filePath}");
             var modifiedDate = post.LastEditDate ?? (post.CreationDate > minDate ? post.CreationDate : minDate);
             db.ExecuteNonQuery($@"INSERT INTO {nameof(PostFts)} (
@@ -57,19 +59,27 @@ foreach (var allFile in allFiles)
                 {nameof(PostFts.ModifiedDate)}
             ) VALUES (
                 {post.Id},
-                '{post.Id}',
+                '{refId}',
                 'stackoverflow',
                 {SqliteDialect.Provider.GetQuotedValue(post.Title + "\n\n" + post.Body)},
                 {SqliteDialect.Provider.GetQuotedValue(post.Tags)},
                 {SqliteDialect.Provider.GetQuotedValue(modifiedDate.ToString("yyyy-MM-dd HH:mm:ss"))}
             )");
         }
-        else if (fileType.StartsWith("h."))
+        else if (file.Contains(".h."))
         {
             var post = ToPost(file);
-            if (existingIds.Contains(post.Id)) continue;
-            existingIds.Add(post.Id);
-            var userName = fileType.Substring(2); 
+            post.CreatedBy ??= fileType.Substring(2); 
+            var refId = post.RefId ?? post.GetRefId();
+            if (!existingIds.Add(refId))
+                continue;
+            if (post.Id > 0)
+            {
+                if (answerIds.Contains(post.Id))
+                    continue;
+                answerIds.Add(post.Id);
+            }
+
             log($"Adding Human Answer {filePath}");
             var modifiedDate = post.LastEditDate ?? (post.CreationDate > minDate ? post.CreationDate : minDate);
             var answerId = post.Id > 0 ? post.Id : nextId++;            
@@ -81,45 +91,22 @@ foreach (var allFile in allFiles)
                 {nameof(PostFts.ModifiedDate)}
             ) VALUES (
                 {answerId},
-                '{id}-{userName}',
-                '{userName}',
+                '{refId}',
+                '{post.CreatedBy}',
                 {SqliteDialect.Provider.GetQuotedValue(post.Body)},
                 {SqliteDialect.Provider.GetQuotedValue(modifiedDate.ToString("yyyy-MM-dd HH:mm:ss"))}
             )");
         }
-        else if (fileType.StartsWith("a."))
+        else if (filePath.EndsWith(".meta.json"))
         {
-            var json = File.ReadAllText(file);
-            var obj = (Dictionary<string,object>)JSON.parse(json);
-            var choices = (List<object>) obj["choices"];
-            var choice = (Dictionary<string,object>)choices[0];
-            var message = (Dictionary<string,object>)choice["message"];
-            var body = (string)message["content"];
-            var userName = fileType.Substring(2); 
-            var modifiedDate = obj.TryGetValue("created", out var oCreated) && oCreated is int created
-                ? DateTimeOffset.FromUnixTimeSeconds(created).DateTime
-                : File.GetLastWriteTime(file);
-            log($"Adding Model Answer {filePath} {userName} {body}");
-            db.ExecuteNonQuery($@"INSERT INTO {nameof(PostFts)} (
-                rowid,
-                {nameof(PostFts.RefId)},
-                {nameof(PostFts.UserName)},
-                {nameof(PostFts.Body)},
-                {nameof(PostFts.ModifiedDate)}
-            ) VALUES (
-                {nextId++},
-                '{id}-{userName}',
-                '{userName}',
-                {SqliteDialect.Provider.GetQuotedValue(body)},
-                {SqliteDialect.Provider.GetQuotedValue(modifiedDate.ToString("yyyy-MM-dd HH:mm:ss"))}
-            )");
+            //ignore
         }
         else
         {
             Console.WriteLine($"Skipping {filePath}");
         }
     } 
-    catch(Exception e)
+    catch (Exception e)
     {
         Console.WriteLine($"ERROR {filePath}: {e.Message}");
     }
@@ -190,5 +177,19 @@ public class Post
     
     public int? AnswerCount { get; set; }
 
-    [Ignore] public string? Body { get; set; }
+    public string? CreatedBy { get; set; }
+    
+    public string? ModifiedBy { get; set; }
+    
+    public string? RefId { get; set; }
+
+    public string? Body { get; set; }
+
+    public string? ModifiedReason { get; set; }
+    
+    public DateTime? LockedDate { get; set; }
+
+    public string? LockedReason { get; set; }
+
+    public string GetRefId() => RefId ?? $"{Id}-{CreatedBy}";
 }
