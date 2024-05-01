@@ -37,7 +37,12 @@ foreach (var allFile in allFiles)
     // if (i > 100) break;
     var file = allFile.Replace('\\','/');
     var filePath = file.Substring(questionsDir.Length);
-    var id = long.Parse(filePath.LeftPart('.').Replace("/",""));
+    var fileId = filePath.LeftPart('.').Replace("/","");
+    if (!long.TryParse(fileId, out var id)) {
+        Console.WriteLine($"Skipping invalid postId in {filePath}");
+        continue;
+    }
+
     var fileType = filePath.RightPart('.').LastLeftPart('.');
 
     try
