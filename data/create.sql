@@ -22,10 +22,12 @@ create table main.post
     AnswerCount      INTEGER,
     CreatedBy        TEXT,
     ModifiedBy       TEXT,
-    RefId            TEXT,
     LockedDate       TEXT,
     LockedReason     TEXT,
     ModifiedReason   TEXT,
     DeletedBy        TEXT,
-    DeletedDate      TEXT
+    DeletedDate      TEXT,
+    RefId            TEXT,
+    RefUrn           TEXT,
+    Meta             TEXT
 );
