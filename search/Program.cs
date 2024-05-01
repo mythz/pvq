@@ -26,7 +26,7 @@ var allFiles = Directory.GetFiles(questionsDir, "*.json", SearchOption.AllDirect
 Console.WriteLine($"Found {allFiles.Length} files");
 
 var existingIds = new HashSet<int>();
-var modelAnswerNextId = 100_000_000;
+var nextId = 100_000_000;
 var minDate = new DateTime(2008,08,1);
 
 var i = 0;
@@ -72,6 +72,7 @@ foreach (var allFile in allFiles)
             var userName = fileType.Substring(2); 
             log($"Adding Human Answer {filePath}");
             var modifiedDate = post.LastEditDate ?? (post.CreationDate > minDate ? post.CreationDate : minDate);
+            var answerId = post.Id > 0 ? post.Id : nextId++;            
             db.ExecuteNonQuery($@"INSERT INTO {nameof(PostFts)} (
                 rowid,
                 {nameof(PostFts.RefId)},
@@ -79,7 +80,7 @@ foreach (var allFile in allFiles)
                 {nameof(PostFts.Body)},
                 {nameof(PostFts.ModifiedDate)}
             ) VALUES (
-                {post.Id},
+                {answerId},
                 '{id}-{userName}',
                 '{userName}',
                 {SqliteDialect.Provider.GetQuotedValue(post.Body)},
@@ -106,7 +107,7 @@ foreach (var allFile in allFiles)
                 {nameof(PostFts.Body)},
                 {nameof(PostFts.ModifiedDate)}
             ) VALUES (
-                {modelAnswerNextId++},
+                {nextId++},
                 '{id}-{userName}',
                 '{userName}',
                 {SqliteDialect.Provider.GetQuotedValue(body)},
