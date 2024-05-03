@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <OutputType>Exe</OutputType>
+    <NoWarn>1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ServiceStack" Version="8.*" />
+    <PackageReference Include="ServiceStack.Extensions" Version="8.*" />
+    <PackageReference Include="ServiceStack.Common" Version="8.*" />
+    <PackageReference Include="ServiceStack.OrmLite.Sqlite.Data" Version="8.*" />
+  </ItemGroup>
+
+</Project>
