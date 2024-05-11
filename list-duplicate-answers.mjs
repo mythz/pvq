@@ -23,7 +23,7 @@ function processDir(dir) {
         const accepted = path.join(dir,file) 
         const mostVoted = accepted.replace('.h.accepted','.h.most-voted')
         if (fs.existsSync(mostVoted) && fs.statSync(accepted).size === fs.statSync(mostVoted).size) {
-            console.log(id, accepted)
+            console.log(id, `${id}-accepted`, accepted)
         }
     })
     subDirs.forEach(subDir => processDir(path.join(dir,subDir)))
